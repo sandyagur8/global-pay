@@ -1,7 +1,7 @@
 // src/app/api/user/create/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import { upsertUser, createOrganization } from "@/lib/db";
-import { Prisma } from "@prisma/client";
+import { Prisma } from "@/generated/prisma";
 
 export async function POST(req: NextRequest) {
   const { walletAddress, paymentToken, userType, organizationName, contractAddress } = await req.json();

@@ -4,7 +4,7 @@ import { rootstockTestnet, hardhat } from 'wagmi/chains';
 // Define local Hardhat network configuration
 const hardhatConfig = {
     ...hardhat,
-    id: 31337,
+    id: 1337,
     name: 'Hardhat Local',
     rpcUrls: {
         default: {
