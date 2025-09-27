@@ -1,5 +1,20 @@
 import { getDefaultConfig } from '@rainbow-me/rainbowkit';
-import { rootstock, rootstockTestnet } from 'wagmi/chains';
+import { rootstock, rootstockTestnet, hardhat } from 'wagmi/chains';
+
+// Define local Hardhat network configuration
+const hardhatConfig = {
+  ...hardhat,
+  id: 1337,
+  name: 'Hardhat Local',
+  rpcUrls: {
+    default: {
+      http: ['http://127.0.0.1:8545'],
+    },
+    public: {
+      http: ['http://127.0.0.1:8545'],
+    },
+  },
+};
 
 // Define Rootstock Testnet configuration
 const rootstockTestnetConfig = {
@@ -17,13 +32,14 @@ const rootstockTestnetConfig = {
 export const config = getDefaultConfig({
   appName: 'Global Pay',
   projectId: process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID || 'demo-project-id',
-  chains: [rootstockTestnetConfig],
+  chains: [hardhatConfig, rootstockTestnetConfig],
   ssr: true,
 });
 
-// Contract addresses (to be updated after deployment)
+// Contract addresses from deployment
 export const CONTRACTS = {
-  PAYROLL: process.env.NEXT_PUBLIC_PAYROLL_CONTRACT_ADDRESS || '',
+  FACTORY: '0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512',
+  USDC: '0x5FbDB2315678afecb367f032d93F642f64180aa3',
 } as const;
 
 // Network configuration

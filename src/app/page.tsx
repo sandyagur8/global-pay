@@ -63,9 +63,6 @@ export default function Home() {
               <Link href="/dashboard">
                 <Button variant="ghost">Dashboard</Button>
               </Link>
-              <Link href="/streams">
-                <Button variant="ghost">My Streams</Button>
-              </Link>
               <CustomConnectButton />
             </div>
           </div>

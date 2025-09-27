@@ -1,4 +1,4 @@
-import { ethers } from "hardhat";
+const { ethers } = require("hardhat");
 
 async function main() {
   console.log("Deploying contracts to Rootstock Testnet...");
@@ -16,13 +16,13 @@ async function main() {
   const mockUSDCAddress = await mockUSDC.getAddress();
   console.log("MockUSDC deployed to:", mockUSDCAddress);
 
-  // Deploy GlobalPayroll
-  console.log("\nDeploying GlobalPayroll...");
-  const GlobalPayroll = await ethers.getContractFactory("GlobalPayroll");
-  const globalPayroll = await GlobalPayroll.deploy();
-  await globalPayroll.waitForDeployment();
-  const globalPayrollAddress = await globalPayroll.getAddress();
-  console.log("GlobalPayroll deployed to:", globalPayrollAddress);
+  // Deploy OrganizationFactory
+  console.log("\nDeploying OrganizationFactory...");
+  const OrganizationFactory = await ethers.getContractFactory("OrganizationFactory");
+  const organizationFactory = await OrganizationFactory.deploy(mockUSDCAddress);
+  await organizationFactory.waitForDeployment();
+  const factoryAddress = await organizationFactory.getAddress();
+  console.log("OrganizationFactory deployed to:", factoryAddress);
 
   // Verify deployment
   console.log("\nVerifying deployments...");
@@ -31,13 +31,13 @@ async function main() {
   const usdcDecimals = await mockUSDC.decimals();
   console.log(`MockUSDC: ${usdcName} (${usdcSymbol}) with ${usdcDecimals} decimals`);
 
-  const nextStreamId = await globalPayroll.nextStreamId();
-  console.log(`GlobalPayroll initialized with nextStreamId: ${nextStreamId}`);
+  const defaultToken = await organizationFactory.defaultPaymentToken();
+  console.log(`OrganizationFactory initialized with default token: ${defaultToken}`);
 
   // Save deployment addresses
   console.log("\n=== DEPLOYMENT SUMMARY ===");
   console.log(`MockUSDC: ${mockUSDCAddress}`);
-  console.log(`GlobalPayroll: ${globalPayrollAddress}`);
+  console.log(`OrganizationFactory: ${factoryAddress}`);
   console.log("===========================");
 
   // Mint some USDC to the deployer for testing

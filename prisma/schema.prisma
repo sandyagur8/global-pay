@@ -13,8 +13,9 @@ datasource db {
 model User {
   id            String          @id @default(cuid())
   walletAddress String          @unique
-  isEmployer    Boolean         @default(false)
-  organization  Organization?
+  userType      UserType        @default(EMPLOYEE)
+  hasOnboarded  Boolean         @default(false)
+  organizations Organization[]
   createdAt     DateTime        @default(now())
   updatedAt     DateTime        @updatedAt
 
@@ -22,30 +23,37 @@ model User {
 }
 
 model Organization {
-  id        String          @id @default(cuid())
-  name      String
-  owner     User            @relation(fields: [ownerId], references: [id])
-  ownerId   String          @unique
-  streams   PaymentStream[]
-  createdAt DateTime        @default(now())
-  updatedAt DateTime        @updatedAt
+  id                String          @id @default(cuid())
+  name              String
+  contractAddress   String          @unique // Address of the deployed Organization contract
+  owner             User            @relation(fields: [ownerId], references: [id])
+  ownerId           String
+  paymentToken      String          // Address of the payment token (USDC)
+  isActive          Boolean         @default(true)
+  employees         Employee[]
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
 
   @@map("organizations")
 }
 
-model PaymentStream {
+model Employee {
   id              String        @id @default(cuid())
   organization    Organization  @relation(fields: [organizationId], references: [id])
   organizationId  String
   employeeAddress String
-  amountPerSecond BigInt        // Store as a stream rate in USDC (wei)
-  startTime       DateTime
-  stopTime        DateTime?     // Optional for ongoing streams
+  name            String?       // Optional employee name/identifier
+  salaryPerSecond BigInt        // Salary amount per second in wei
+  startDate       DateTime
   isActive        Boolean       @default(true)
-  totalFunded     BigInt        @default(0) // Total amount funded for this stream
-  totalWithdrawn  BigInt        @default(0) // Total amount withdrawn by employee
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
 
-  @@map("payment_streams")
+  @@unique([organizationId, employeeAddress])
+  @@map("employees")
+}
+
+enum UserType {
+  EMPLOYER
+  EMPLOYEE
 }

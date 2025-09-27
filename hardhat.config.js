@@ -1,7 +1,7 @@
-import "@nomicfoundation/hardhat-toolbox";
+require("@nomiclabs/hardhat-ethers");
 
 /** @type import('hardhat/config').HardhatUserConfig */
-const config = {
+module.exports = {
     solidity: {
         version: "0.8.24",
         settings: {
@@ -12,11 +12,12 @@ const config = {
         },
     },
     networks: {
-        hardhat: {},
-        rootstockTestnet: {
-            url: "https://public-node.testnet.rsk.co",
-            chainId: 31,
-            accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
+        hardhat: {
+            chainId: 1337,
+        },
+        localhost: {
+            url: "http://127.0.0.1:8545",
+            chainId: 1337,
         },
     },
     paths: {
@@ -26,5 +27,3 @@ const config = {
         artifacts: "./artifacts",
     },
 };
-
-export default config;

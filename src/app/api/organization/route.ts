@@ -3,11 +3,11 @@ import { prisma } from '@/lib/db';
 
 export async function POST(request: NextRequest) {
   try {
-    const { name, ownerAddress } = await request.json();
+    const { name, ownerAddress, contractAddress, paymentToken } = await request.json();
     
-    if (!name || !ownerAddress) {
+    if (!name || !ownerAddress || !contractAddress || !paymentToken) {
       return NextResponse.json(
-        { error: 'Name and owner address are required' },
+        { error: 'Name, owner address, contract address, and payment token are required' },
         { status: 400 }
       );
     }
@@ -24,38 +24,45 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Check if user already has an organization
-    const existingOrg = await prisma.organization.findUnique({
-      where: { ownerId: user.id },
-    });
-
-    if (existingOrg) {
+    if (user.userType !== 'EMPLOYER') {
       return NextResponse.json(
-        { error: 'User already has an organization' },
+        { error: 'User is not an employer' },
         { status: 400 }
       );
     }
 
-    // Create organization and update user to be employer
-    const [organization] = await prisma.$transaction([
-      prisma.organization.create({
-        data: {
-          name,
-          ownerId: user.id,
-        },
-      }),
-      prisma.user.update({
-        where: { id: user.id },
-        data: { isEmployer: true },
-      }),
-    ]);
+    // Check if contract address is already used
+    const existingOrg = await prisma.organization.findUnique({
+      where: { contractAddress },
+    });
+
+    if (existingOrg) {
+      return NextResponse.json(
+        { error: 'Contract address already in use' },
+        { status: 400 }
+      );
+    }
+
+    // Create organization
+    const organization = await prisma.organization.create({
+      data: {
+        name,
+        contractAddress,
+        ownerId: user.id,
+        paymentToken,
+        isActive: true,
+      },
+    });
 
     return NextResponse.json({
       success: true,
       organization: {
         id: organization.id,
         name: organization.name,
+        contractAddress: organization.contractAddress,
         ownerId: organization.ownerId,
+        paymentToken: organization.paymentToken,
+        isActive: organization.isActive,
       },
     });
   } catch (error) {
@@ -81,7 +88,16 @@ export async function GET(request: NextRequest) {
 
     const user = await prisma.user.findUnique({
       where: { walletAddress: ownerAddress },
-      include: { organization: true },
+      include: { 
+        organizations: {
+          where: { isActive: true },
+          include: {
+            employees: {
+              where: { isActive: true }
+            }
+          }
+        }
+      },
     });
 
     if (!user) {
@@ -93,12 +109,12 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      organization: user.organization,
+      organizations: user.organizations,
     });
   } catch (error) {
-    console.error('Error fetching organization:', error);
+    console.error('Error fetching organizations:', error);
     return NextResponse.json(
-      { error: 'Failed to fetch organization' },
+      { error: 'Failed to fetch organizations' },
       { status: 500 }
     );
   }

@@ -31,7 +31,8 @@ export async function POST(request: NextRequest) {
       update: { updatedAt: new Date() },
       create: {
         walletAddress,
-        isEmployer: false, // Default to employee, can be changed later
+        userType: 'EMPLOYEE', // Default to employee
+        hasOnboarded: false,
       },
     });
 
@@ -42,7 +43,8 @@ export async function POST(request: NextRequest) {
       user: {
         id: user.id,
         walletAddress: user.walletAddress,
-        isEmployer: user.isEmployer,
+        userType: user.userType,
+        hasOnboarded: user.hasOnboarded,
       },
     });
   } catch (error) {
