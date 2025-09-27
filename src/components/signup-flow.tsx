@@ -17,6 +17,8 @@ import {
 import { motion } from 'framer-motion';
 import { useAccount } from 'wagmi';
 import { useENSProfile } from '@/hooks/useENS';
+import { createOrganization } from '@/lib/contract';
+import { CONTRACTS } from '@/lib/web3';
 
 interface SignupFlowProps {
   isOpen: boolean;
@@ -24,6 +26,7 @@ interface SignupFlowProps {
     userType: 'EMPLOYER' | 'EMPLOYEE';
     organizationName?: string;
     displayName?: string;
+    contractAddress?: `0x${string}`;
   }) => void;
 }
 
@@ -52,10 +55,16 @@ export function SignupFlow({ isOpen, onComplete }: SignupFlowProps) {
 
     setIsLoading(true);
     try {
+      let contractAddress: `0x${string}` | undefined;
+      if (finalUserType === 'EMPLOYER' && organizationName) {
+        contractAddress = await createOrganization(organizationName, CONTRACTS.USDC as `0x${string}`);
+      }
+
       await onComplete({
         userType: finalUserType,
         organizationName: finalUserType === 'EMPLOYER' ? organizationName : undefined,
         displayName: ensName || displayName || undefined,
+        contractAddress,
       });
     } finally {
       setIsLoading(false);

@@ -4,7 +4,7 @@ import { upsertUser, createOrganization } from "@/lib/db";
 import { Prisma } from "@prisma/client";
 
 export async function POST(req: NextRequest) {
-  const { walletAddress, userType, organizationName } = await req.json();
+  const { walletAddress, userType, organizationName, displayName, contractAddress } = await req.json();
 
   if (!walletAddress || !userType) {
     return NextResponse.json({ error: "Wallet address and user type are required" }, { status: 400 });
@@ -18,11 +18,7 @@ export async function POST(req: NextRequest) {
 
     await upsertUser(walletAddress, userData);
 
-    console.log(walletAddress, userType, organizationName);
-
-    if (userType === 'EMPLOYER' && organizationName) {
-      //   // Generate a random address for the contract address to avoid unique constraint errors
-      const contractAddress = "0x0000000000000000000000000000000000000000";
+    if (userType === 'EMPLOYER' && organizationName && contractAddress) {
       const paymentToken = "0x0000000000000000000000000000000000000000"; // Dummy payment token
       await createOrganization(organizationName, walletAddress, contractAddress, paymentToken);
     }

@@ -41,6 +41,7 @@ export default function DashboardPage() {
     userType: 'EMPLOYER' | 'EMPLOYEE';
     organizationName?: string;
     displayName?: string;
+    contractAddress?: `0x${string}`;
   }) => {
     if (!address) return;
 
