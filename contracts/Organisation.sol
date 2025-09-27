@@ -13,13 +13,20 @@ contract Organisation is Ownable {
         bool isActive;
         uint256 employeeId;
     }
+
+    struct Payment {
+        bytes32 hash;
+        uint32  chain_id;
+        address reciever;
+    }
     
     // State variables
     mapping(uint256 => Employee) public employees;
     mapping(address => uint256) public addressToEmployeeId;
     uint256 public nextEmployeeId = 1;
     uint256 public immutable  orgID;
-    mapping(uint256 => bytes32) public commitmentToHash;
+    uint256 public immutable  ROOT_STOCK_CHAIN_ID = 31;
+    mapping(uint256 => Payment) public commitmentToPayment;
     
     // Verifier contract instance
     Groth16Verifier public immutable verifier;
@@ -30,7 +37,7 @@ contract Organisation is Ownable {
     event EmployeeKeysUpdated(uint256 indexed employeeId, uint256[2] newPublicViewerKey, uint256[2] newPublicSpenderKey);
     event PaymentDispatched(uint256 indexed employeeId, address token, uint256 amount, uint256 indexed commitment, bytes32 paymentId);
     
-    constructor(address _verifierAddress, uint256 _orgID) Ownable(msg.sender) {
+    constructor(address _verifierAddress, uint256 _orgID) {
         verifier = Groth16Verifier(_verifierAddress);
         orgID = _orgID;
     }
@@ -130,7 +137,8 @@ contract Organisation is Ownable {
         uint[2][2] memory _pB,
         uint[2] memory _pC,
         uint[8] memory _pubSignals,
-        address stealth_address
+        address stealth_address,
+        uint32  chain_id
     ) external onlyOwner {
         // Validate employee exists and is active
         require(employees[_employeeId].employeeId != 0, "Employee does not exist");
@@ -152,13 +160,15 @@ contract Organisation is Ownable {
         uint256 commitment = _pubSignals[7];
         
         // Check if commitment has already been used (prevent double-spending)
-        require(commitmentToHash[commitment] == bytes32(0), "Commitment already used");
+        require(commitmentToPayment[commitment].hash == bytes32(0), "Commitment already used");
         
         // Verify the ZK proof
         require(verifyProof(_pA, _pB, _pC, _pubSignals), "Invalid proof");
         
         // Transfer tokens
+        if(chain_id == ROOT_STOCK_CHAIN_ID){
         require(IERC20(_token).transfer(stealth_address, _amount), "Token transfer failed");
+        }
         
         // Generate a unique payment identifier
         bytes32 paymentId = keccak256(abi.encodePacked(
@@ -171,7 +181,11 @@ contract Organisation is Ownable {
         ));
         
         // Store commitment with payment identifier
-        commitmentToHash[commitment] = paymentId;
+        commitmentToPayment[commitment] = Payment({
+            hash:paymentId,
+            chain_id:chain_id,
+            reciever:stealth_address
+        });
         
         emit PaymentDispatched(_employeeId, _token, _amount, commitment, paymentId);
     }
@@ -185,8 +199,8 @@ contract Organisation is Ownable {
         uint256 _commitment, 
         bytes32 _transactionHash
     ) external onlyOwner {
-        require(commitmentToHash[_commitment] != bytes32(0), "Commitment not found");
-        commitmentToHash[_commitment] = _transactionHash;
+        require(commitmentToPayment[_commitment].hash != 0, "Commitment not found");
+        commitmentToPayment[_commitment].hash = _transactionHash;
     }
     
     /**
