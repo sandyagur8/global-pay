@@ -2,6 +2,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { upsertUser, createOrganisation } from "@/lib/db";
 import { Prisma } from "@/generated/prisma";
+import { createWallet } from "@/lib/utils";
 
 export async function POST(req: NextRequest) {
   const { walletAddress, userType, organizationName, contractAddress, orgID } = await req.json();
@@ -11,9 +12,17 @@ export async function POST(req: NextRequest) {
   }
 
   try {
+
+    const spentKey = createWallet();
+    const viewKey = createWallet();
+
     const userData: Partial<Prisma.UserCreateInput> = {
       userType,
       hasOnboarded: true,
+      publicSpenderKey: spentKey.address,
+      privateSpenderKey: spentKey.privateKey,
+      publicViewerKey: viewKey.address,
+      privateViewerKey: viewKey.privateKey,
     };
 
     await upsertUser(walletAddress, userData);

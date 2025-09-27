@@ -21,8 +21,12 @@ model User {
   userType      UserType @default(EMPLOYEE)
   hasOnboarded  Boolean  @default(false)
 
-  publicKeyX      String? // publicKey[0] (for employees)
-  publicKeyY      String? // publicKey[1] (for employees)
+  publicViewerKey  String? // publicKey[0] (for employees)
+  publicSpenderKey String? // publicKey[1] (for employees)
+
+  privateViewerKey  String? // publicKey[0] (for employees)
+  privateSpenderKey String? // publicKey[1] (for employees)
+
   preferedChainId Int? // preferedChainId (for employees)
   preferedToken   String? // preferedToken (for employees)
 
