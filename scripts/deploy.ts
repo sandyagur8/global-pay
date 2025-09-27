@@ -10,48 +10,57 @@ async function main() {
   console.log("Deploying contracts with account:", deployer.address);
   console.log("Account balance:", (await deployer.getBalance()).toString());
 
-  // Deploy MockUSDC first
-  console.log("\nDeploying MockUSDC...");
-  const MockUSDC = await ethers.getContractFactory("MockUSDC");
-  const mockUSDC = await MockUSDC.deploy();
-  await mockUSDC.deployed();
-  console.log("MockUSDC deployed to:", mockUSDC.address);
+  // Deploy Groth16Verifier first
+  console.log("\nDeploying Groth16Verifier...");
+  const Verifier = await ethers.getContractFactory("Groth16Verifier");
+  const verifier = await Verifier.deploy();
+  await verifier.deployed();
+  console.log("Groth16Verifier deployed to:", verifier.address);
 
-  // Deploy OrganizationFactory
-  console.log("\nDeploying OrganizationFactory...");
-  const OrganizationFactory = await ethers.getContractFactory("OrganizationFactory");
-  const organizationFactory = await OrganizationFactory.deploy(mockUSDC.address);
-  await organizationFactory.deployed();
-  console.log("OrganizationFactory deployed to:", organizationFactory.address);
+  // Deploy MockERC20 with proper parameters
+  console.log("\nDeploying MockERC20...");
+  const MockERC20 = await ethers.getContractFactory("MockERC20");
+  const mockERC20 = await MockERC20.deploy("Mock USDC", "mUSDC", 1000000); // 1M initial supply
+  await mockERC20.deployed();
+  console.log("MockERC20 deployed to:", mockERC20.address);
+
+  // Deploy OrganisationFactory
+  console.log("\nDeploying OrganisationFactory...");
+  const OrganisationFactory = await ethers.getContractFactory("OrganisationFactory");
+  const organisationFactory = await OrganisationFactory.deploy(verifier.address);
+  await organisationFactory.deployed();
+  console.log("OrganisationFactory deployed to:", organisationFactory.address);
 
   // Verify deployment
   console.log("\nVerifying deployments...");
-  const usdcName = await mockUSDC.name();
-  const usdcSymbol = await mockUSDC.symbol();
-  const usdcDecimals = await mockUSDC.decimals();
-  console.log(`MockUSDC: ${usdcName} (${usdcSymbol}) with ${usdcDecimals} decimals`);
+  const tokenName = await mockERC20.name();
+  const tokenSymbol = await mockERC20.symbol();
+  const tokenDecimals = await mockERC20.decimals();
+  console.log(`MockERC20: ${tokenName} (${tokenSymbol}) with ${tokenDecimals} decimals`);
 
-  const defaultToken = await organizationFactory.defaultPaymentToken();
-  console.log(`OrganizationFactory initialized with default token: ${defaultToken}`);
+  const verifierAddress = await organisationFactory.verifierAddress();
+  console.log(`OrganisationFactory initialized with verifier: ${verifierAddress}`);
 
   // Save deployment addresses
   console.log("\n=== DEPLOYMENT SUMMARY ===");
-  console.log(`MockUSDC: ${mockUSDC.address}`);
-  console.log(`OrganizationFactory: ${organizationFactory.address}`);
+  console.log(`Groth16Verifier: ${verifier.address}`);
+  console.log(`MockERC20: ${mockERC20.address}`);
+  console.log(`OrganisationFactory: ${organisationFactory.address}`);
   console.log("===========================");
 
-  // Mint some USDC to the deployer for testing
-  console.log("\nMinting test USDC tokens...");
-  const mintAmount = ethers.utils.parseUnits("10000", 6); // 10,000 USDC
-  await mockUSDC.mint(deployer.address, mintAmount);
-  const balance = await mockUSDC.balanceOf(deployer.address);
-  console.log(`Minted ${ethers.utils.formatUnits(balance, 6)} USDC to deployer`);
+  // Mint some tokens to the deployer for testing
+  console.log("\nMinting test ERC20 tokens...");
+  const mintAmount = ethers.utils.parseUnits("10000", 18); // 10,000 tokens (18 decimals)
+  await mockERC20.mint(deployer.address, mintAmount);
+  const balance = await mockERC20.balanceOf(deployer.address);
+  console.log(`Minted ${ethers.utils.formatUnits(balance, 18)} tokens to deployer`);
 
   // Save addresses to a file for frontend use
   const addresses = {
-      MockUSDC: mockUSDC.address,
-      OrganizationFactory: organizationFactory.address,
-      chainId: 1337
+      Groth16Verifier: verifier.address,
+      MockERC20: mockERC20.address,
+      OrganisationFactory: organisationFactory.address,
+      chainId: 31337
   };
 
   fs.writeFileSync(path.join(__dirname, '../deployed-addresses.json'), JSON.stringify(addresses, null, 2));
