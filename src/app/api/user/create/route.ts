@@ -4,7 +4,7 @@ import { upsertUser, createOrganization } from "@/lib/db";
 import { Prisma } from "@prisma/client";
 
 export async function POST(req: NextRequest) {
-  const { walletAddress, userType, organizationName, contractAddress } = await req.json();
+  const { walletAddress, paymentToken, userType, organizationName, contractAddress } = await req.json();
 
   if (!walletAddress || !userType) {
     return NextResponse.json({ error: "Wallet address and user type are required" }, { status: 400 });
@@ -19,7 +19,6 @@ export async function POST(req: NextRequest) {
     await upsertUser(walletAddress, userData);
 
     if (userType === 'EMPLOYER' && organizationName && contractAddress) {
-      const paymentToken = "0x0000000000000000000000000000000000000000"; // Dummy payment token
       await createOrganization(organizationName, walletAddress, contractAddress, paymentToken);
     }
 

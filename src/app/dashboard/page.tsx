@@ -5,6 +5,7 @@ import { useAccount } from "wagmi";
 import { SignupFlow } from "@/components/signup-flow";
 import EmployeeDashboard from "@/components/EmployeeDashboard";
 import EmployerDashboard from "@/components/EmployerDashboard";
+import { LoadingSpinner } from "@/components/ui/loading-spinner";
 
 interface User {
   id: string;
@@ -82,7 +83,7 @@ export default function DashboardPage() {
   };
 
   if (loading) {
-    return <div>Loading...</div>;
+    return <LoadingSpinner />;
   }
 
   if (!address) {
