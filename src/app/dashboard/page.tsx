@@ -3,38 +3,50 @@
 import { useEffect, useState } from "react";
 import { useAccount } from "wagmi";
 import { SignupFlow } from "@/components/signup-flow";
+import EmployeeDashboard from "@/components/EmployeeDashboard";
+import EmployerDashboard from "@/components/EmployerDashboard";
+
+interface User {
+  id: string;
+  walletAddress: string;
+  userType: 'EMPLOYEE' | 'EMPLOYER';
+  hasOnboarded: boolean;
+}
 
 export default function DashboardPage() {
   const { address } = useAccount();
-  const [userExists, setUserExists] = useState<boolean | null>(null);
+  const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [showSignupFlow, setShowSignupFlow] = useState(false);
 
   useEffect(() => {
-    async function checkUser() {
+    async function fetchUser() {
       if (address) {
         setLoading(true);
         try {
-          const response = await fetch(`/api/user/exists?walletAddress=${address}`);
-          const data = await response.json();
-          setUserExists(data.exists);
-          if (!data.exists) {
+          const response = await fetch(`/api/user/get?walletAddress=${address}`);
+          if (response.status === 404) {
             setShowSignupFlow(true);
+            setUser(null);
+          } else {
+            const data = await response.json();
+            setUser(data);
+            setShowSignupFlow(false);
           }
         } catch (error) {
           console.error("Error checking user:", error);
-          setUserExists(false);
+          setUser(null);
         } finally {
           setLoading(false);
         }
       } else {
         setLoading(false);
-        setUserExists(null);
+        setUser(null);
         setShowSignupFlow(false);
       }
     }
 
-    checkUser();
+    fetchUser();
   }, [address]);
 
   const handleSignupComplete = async (userData: {
@@ -58,7 +70,8 @@ export default function DashboardPage() {
       });
 
       if (response.ok) {
-        setUserExists(true);
+        const newUser = await response.json();
+        setUser(newUser);
         setShowSignupFlow(false);
       } else {
         console.error("Failed to create user");
@@ -80,15 +93,9 @@ export default function DashboardPage() {
     return <SignupFlow isOpen={showSignupFlow} onComplete={handleSignupComplete} />;
   }
 
-  return (
-    <div>
-      <h1>Dashboard</h1>
-      <p>Wallet Address: {address}</p>
-      {userExists ? (
-        <p>Welcome back!</p>
-      ) : (
-        <p>User with this wallet address does not exist.</p>
-      )}
-    </div>
-  );
+  if (user) {
+    return user.userType === 'EMPLOYER' ? <EmployerDashboard /> : <EmployeeDashboard />;
+  }
+
+  return <div>Something went wrong.</div>;
 }

@@ -145,7 +145,7 @@ export function SignupFlow({ isOpen, onComplete }: SignupFlowProps) {
                     <div className="w-16 h-16 bg-gradient-to-r from-green-600 to-teal-600 rounded-full flex items-center justify-center mx-auto mb-4">
                       <UserCheck className="h-8 w-8 text-white" />
                     </div>
-                    <h4 className="text-lg font-semibold mb-2">No, I'm an employee/freelancer</h4>
+                    <h4 className="text-lg font-semibold mb-2">No, I&apos;m an employee/freelancer</h4>
                     <p className="text-gray-600 text-sm mb-4">
                       I want to receive payments from organizations
                     </p>
@@ -181,7 +181,7 @@ export function SignupFlow({ isOpen, onComplete }: SignupFlowProps) {
                   <Briefcase className="h-8 w-8 text-white" />
                 </div>
                 <h3 className="text-xl font-semibold mb-2">Set up your Organization</h3>
-                <p className="text-gray-600">What's the name of your organization?</p>
+                <p className="text-gray-600">What&apos;s the name of your organization?</p>
               </div>
 
               <div className="space-y-4">
