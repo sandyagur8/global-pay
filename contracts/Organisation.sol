@@ -17,12 +17,12 @@ contract Organisation is Ownable {
     struct Payment {
         bytes32 hash;
         uint32  chain_id;
-        address reciever;
+        address reciever; /* stealth wallet addy */
+        bytes  ephermal_public_key;
     }
     
     // State variables
     mapping(uint256 => Employee) public employees;
-    mapping(address => uint256) public addressToEmployeeId;
     uint256 public nextEmployeeId = 1;
     uint256 public immutable  orgID;
     uint256 public immutable  ROOT_STOCK_CHAIN_ID = 31;
@@ -35,7 +35,7 @@ contract Organisation is Ownable {
     event EmployeeAdded(uint256 indexed employeeId, uint256[2] publicViewerKey, uint256[2] publicSpenderKey);
     event EmployeeDeactivated(uint256 indexed employeeId);
     event EmployeeKeysUpdated(uint256 indexed employeeId, uint256[2] newPublicViewerKey, uint256[2] newPublicSpenderKey);
-    event PaymentDispatched(uint256 indexed employeeId, address token, uint256 amount, uint256 indexed commitment, bytes32 paymentId);
+    event PaymentDispatched(uint256 indexed employeeId, address token, uint256 amount, uint256 indexed commitment, bytes32 paymentId,bytes ephermal_public_key);
     
     constructor(address _verifierAddress, uint256 _orgID) {
         verifier = Groth16Verifier(_verifierAddress);
@@ -46,16 +46,11 @@ contract Organisation is Ownable {
      * @dev Add a new employee with their stealth address keys
      * @param _publicViewerKey The public viewer key coordinates [x, y]
      * @param _publicSpenderKey The public spender key coordinates [x, y]
-     * @param _employeeAddress The employee's wallet address for mapping
      */
     function addEmployee(
         uint256[2] memory _publicViewerKey,
-        uint256[2] memory _publicSpenderKey,
-        address _employeeAddress
-    ) external onlyOwner {
-        require(_employeeAddress != address(0), "Invalid employee address");
-        require(addressToEmployeeId[_employeeAddress] == 0, "Employee already exists");
-        
+        uint256[2] memory _publicSpenderKey
+    ) external onlyOwner {        
         uint256 employeeId = nextEmployeeId++;
         
         employees[employeeId] = Employee({
@@ -64,9 +59,7 @@ contract Organisation is Ownable {
             isActive: true,
             employeeId: employeeId
         });
-        
-        addressToEmployeeId[_employeeAddress] = employeeId;
-        
+                
         emit EmployeeAdded(employeeId, _publicViewerKey, _publicSpenderKey);
     }
     
@@ -138,7 +131,8 @@ contract Organisation is Ownable {
         uint[2] memory _pC,
         uint[8] memory _pubSignals,
         address stealth_address,
-        uint32  chain_id
+        uint32  chain_id,
+        bytes memory ephermal_public_key
     ) external onlyOwner {
         // Validate employee exists and is active
         require(employees[_employeeId].employeeId != 0, "Employee does not exist");
@@ -184,10 +178,11 @@ contract Organisation is Ownable {
         commitmentToPayment[commitment] = Payment({
             hash:paymentId,
             chain_id:chain_id,
-            reciever:stealth_address
+            reciever:stealth_address,
+            ephermal_public_key:ephermal_public_key
         });
         
-        emit PaymentDispatched(_employeeId, _token, _amount, commitment, paymentId);
+        emit PaymentDispatched(_employeeId, _token, _amount, commitment, paymentId,ephermal_public_key);
     }
     
     /**
@@ -212,15 +207,7 @@ contract Organisation is Ownable {
         require(employees[_employeeId].employeeId != 0, "Employee does not exist");
         return employees[_employeeId];
     }
-    
-    /**
-     * @dev Get employee ID by address
-     * @param _employeeAddress The employee's wallet address
-     * @return uint256 The employee ID (0 if not found)
-     */
-    function getEmployeeIdByAddress(address _employeeAddress) external view returns (uint256) {
-        return addressToEmployeeId[_employeeAddress];
-    }
+
     
     /**
      * @dev Check if employee is active
