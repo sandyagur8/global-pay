@@ -48,3 +48,4 @@ next-env.d.ts
 
 temp.md
 artifacts
+/src/generated/prisma

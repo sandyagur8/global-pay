@@ -1,7 +1,9 @@
-import OrganizationFactory from '../../artifacts/contracts/OrganizationFactory.sol/OrganizationFactory.json';
-import MockUSDC from '../../artifacts/contracts/MockUSDC.sol/MockUSDC.json';
-import Organization from '../../artifacts/contracts/Organization.sol/Organization.json';
+import Groth16Verifier from '../../artifacts/contracts/Verifier.sol/Groth16Verifier.json';
+import OrganisationFactory from '../../artifacts/contracts/OrganisationFactory.sol/OrganisationFactory.json';
+import MockERC20 from '../../artifacts/contracts/MockERC20.sol/MockERC20.json';
+import Organisation from '../../artifacts/contracts/Organisation.sol/Organisation.json';
 
-export const OrganizationFactoryABI = OrganizationFactory.abi;
-export const MockUSDCABI = MockUSDC.abi;
-export const OrganizationABI = Organization.abi;
+export const Groth16VerifierABI = Groth16Verifier.abi;
+export const OrganisationFactoryABI = OrganisationFactory.abi;
+export const MockERC20ABI = MockERC20.abi;
+export const OrganisationABI = Organisation.abi;

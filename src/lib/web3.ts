@@ -4,7 +4,7 @@ import { rootstockTestnet, hardhat } from 'wagmi/chains';
 // Define local Hardhat network configuration
 const hardhatConfig = {
     ...hardhat,
-    id: 1337,
+    id: 31337,
     name: 'Hardhat Local',
     rpcUrls: {
         default: {
@@ -40,7 +40,8 @@ import deployedAddresses from '../../deployed-addresses.json';
 
 // Contract addresses from deployment
 export const CONTRACTS = {
-    FACTORY: deployedAddresses.OrganizationFactory,
-    USDC: deployedAddresses.MockUSDC,
+    VERIFIER: deployedAddresses.Groth16Verifier,
+    FACTORY: deployedAddresses.OrganisationFactory,
+    MOCK_ERC20: deployedAddresses.MockERC20,
 } as const;
 
