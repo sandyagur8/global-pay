@@ -8,7 +8,6 @@ import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import {
   Building2,
-  User,
   ArrowRight,
   CheckCircle,
   Briefcase,
@@ -18,7 +17,6 @@ import { motion } from 'framer-motion';
 import { useAccount } from 'wagmi';
 import { useENSProfile } from '@/hooks/useENS';
 import { deployOrganisation } from '@/lib/contract';
-import { CONTRACTS } from '@/lib/web3';
 
 interface SignupFlowProps {
   isOpen: boolean;
