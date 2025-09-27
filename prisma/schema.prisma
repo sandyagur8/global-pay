@@ -1,0 +1,51 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String          @id @default(cuid())
+  walletAddress String          @unique
+  isEmployer    Boolean         @default(false)
+  organization  Organization?
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+
+  @@map("users")
+}
+
+model Organization {
+  id        String          @id @default(cuid())
+  name      String
+  owner     User            @relation(fields: [ownerId], references: [id])
+  ownerId   String          @unique
+  streams   PaymentStream[]
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
+
+  @@map("organizations")
+}
+
+model PaymentStream {
+  id              String        @id @default(cuid())
+  organization    Organization  @relation(fields: [organizationId], references: [id])
+  organizationId  String
+  employeeAddress String
+  amountPerSecond BigInt        // Store as a stream rate in USDC (wei)
+  startTime       DateTime
+  stopTime        DateTime?     // Optional for ongoing streams
+  isActive        Boolean       @default(true)
+  totalFunded     BigInt        @default(0) // Total amount funded for this stream
+  totalWithdrawn  BigInt        @default(0) // Total amount withdrawn by employee
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  @@map("payment_streams")
+}
