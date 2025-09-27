@@ -1,12 +1,13 @@
 import { getPublicClient, getWalletClient } from 'wagmi/actions';
 import { config } from './web3';
-import { OrganizationFactoryABI, MockUSDCABI, OrganizationABI } from './abis';
+import { OrganisationFactoryABI, MockERC20ABI, OrganisationABI } from './abis';
 import { CONTRACTS } from './web3';
 import { Abi, decodeEventLog, parseAbiItem } from 'viem';
 
+
 export async function getContract(address: `0x${string}`, abi: Abi) {
-  const publicClient = getPublicClient(config);
-  const walletClient = await getWalletClient(config);
+  const publicClient = getPublicClient(config, { chainId: 1337 });
+  const walletClient = await getWalletClient(config, { chainId: 1337 });
 
   if (!publicClient || !walletClient) {
     return null;
@@ -20,15 +21,15 @@ export async function getContract(address: `0x${string}`, abi: Abi) {
   };
 }
 
-export async function createOrganization(organizationName: string, paymentToken: `0x${string}`) {
-    const factoryContract = await getContract(CONTRACTS.FACTORY as `0x${string}`, OrganizationFactoryABI as Abi);
+export async function deployOrganisation() {
+    const factoryContract = await getContract(CONTRACTS.FACTORY as `0x${string}`, OrganisationFactoryABI as Abi);
     if (!factoryContract) return;
 
     const { request } = await factoryContract.public.simulateContract({
         address: factoryContract.address,
         abi: factoryContract.abi,
-        functionName: 'createOrganization',
-        args: [organizationName, paymentToken],
+        functionName: 'deployOrganisation',
+        args: [],
         account: factoryContract.wallet.account.address,
     });
 
@@ -43,44 +44,106 @@ export async function createOrganization(organizationName: string, paymentToken:
         throw new Error("OrganizationCreated event log not found");
     }
 
-    const event = parseAbiItem('event OrganizationCreated(address indexed owner, address indexed organizationContract, string name)');
+    const event = parseAbiItem('event OrganisationDeployed(uint256 indexed orgID, address indexed organisationAddress, address indexed owner, uint256 timestamp)');
     const decodedLog = decodeEventLog({
         abi: [event],
         data: log.data,
         topics: log.topics,
     });
 
-    return (decodedLog.args as { organizationContract: `0x${string}` }).organizationContract;
+    return {
+        orgID: (decodedLog.args as { orgID: bigint }).orgID,
+        organisationAddress: (decodedLog.args as { organisationAddress: `0x${string}` }).organisationAddress
+    };
 }
 
-export async function approveUSDC(spender: `0x${string}`, amount: bigint) {
-    const usdcContract = await getContract(CONTRACTS.USDC as `0x${string}`, MockUSDCABI as Abi);
-    if (!usdcContract) return;
+export async function approveERC20(spender: `0x${string}`, amount: bigint) {
+    const erc20Contract = await getContract(CONTRACTS.MOCK_ERC20 as `0x${string}`, MockERC20ABI as Abi);
+    if (!erc20Contract) return;
 
-    const { request } = await usdcContract.public.simulateContract({
-        address: usdcContract.address,
-        abi: usdcContract.abi,
+    const { request } = await erc20Contract.public.simulateContract({
+        address: erc20Contract.address,
+        abi: erc20Contract.abi,
         functionName: 'approve',
         args: [spender, amount],
-        account: usdcContract.wallet.account.address,
+        account: erc20Contract.wallet.account.address,
     });
 
-    const hash = await usdcContract.wallet.writeContract(request);
+    const hash = await erc20Contract.wallet.writeContract(request);
     return hash;
 }
 
-export async function depositFunds(organizationAddress: `0x${string}`, amount: bigint) {
-    const organizationContract = await getContract(organizationAddress, OrganizationABI as Abi);
-    if (!organizationContract) return;
+export async function dispatchPayment(
+    organisationAddress: `0x${string}`,
+    employeeId: bigint,
+    token: `0x${string}`,
+    amount: bigint,
+    pA: [bigint, bigint],
+    pB: [[bigint, bigint], [bigint, bigint]],
+    pC: [bigint, bigint],
+    pubSignals: [bigint, bigint, bigint, bigint, bigint, bigint, bigint, bigint],
+    stealthAddress: `0x${string}`
+) {
+    const organisationContract = await getContract(organisationAddress, OrganisationABI as Abi);
+    if (!organisationContract) return;
 
-    const { request } = await organizationContract.public.simulateContract({
-        address: organizationContract.address,
-        abi: organizationContract.abi,
-        functionName: 'depositFunds',
-        args: [amount],
-        account: organizationContract.wallet.account.address,
+    const { request } = await organisationContract.public.simulateContract({
+        address: organisationContract.address,
+        abi: organisationContract.abi,
+        functionName: 'dispatchPayment',
+        args: [employeeId, token, amount, pA, pB, pC, pubSignals, stealthAddress],
+        account: organisationContract.wallet.account.address,
     });
 
-    const hash = await organizationContract.wallet.writeContract(request);
+    const hash = await organisationContract.wallet.writeContract(request);
     return hash;
+}
+
+export async function addEmployee(
+    organisationAddress: `0x${string}`,
+    publicViewerKey: [bigint, bigint],
+    publicSpenderKey: [bigint, bigint],
+    employeeAddress: `0x${string}`
+) {
+    const organisationContract = await getContract(organisationAddress, OrganisationABI as Abi);
+    if (!organisationContract) return;
+
+    const { request } = await organisationContract.public.simulateContract({
+        address: organisationContract.address,
+        abi: organisationContract.abi,
+        functionName: 'addEmployee',
+        args: [publicViewerKey, publicSpenderKey, employeeAddress],
+        account: organisationContract.wallet.account.address,
+    });
+
+    const hash = await organisationContract.wallet.writeContract(request);
+    return hash;
+}
+
+export async function getEmployee(organisationAddress: `0x${string}`, employeeId: bigint) {
+    const organisationContract = await getContract(organisationAddress, OrganisationABI as Abi);
+    if (!organisationContract) return;
+
+    const result = await organisationContract.public.readContract({
+        address: organisationContract.address,
+        abi: organisationContract.abi,
+        functionName: 'getEmployee',
+        args: [employeeId],
+    });
+
+    return result;
+}
+
+export async function getOrganisation(orgID: bigint) {
+    const factoryContract = await getContract(CONTRACTS.FACTORY as `0x${string}`, OrganisationFactoryABI as Abi);
+    if (!factoryContract) return;
+
+    const result = await factoryContract.public.readContract({
+        address: factoryContract.address,
+        abi: factoryContract.abi,
+        functionName: 'getOrganisation',
+        args: [orgID],
+    });
+
+    return result;
 }

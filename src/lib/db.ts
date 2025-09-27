@@ -36,24 +36,24 @@ export async function upsertUser(walletAddress: string, userData: Partial<Prisma
 }
 
 /**
- * Creates a new organization and links it to a user.
- * @param orgName The name of the organization.
+ * Creates a new organisation and links it to a user.
+ * @param orgName The name of the organisation (optional).
  * @param ownerWalletAddress The wallet address of the owner.
- * @param contractAddress The address of the deployed Organization contract.
- * @param paymentToken The address of the payment token (USDC).
- * @returns The created organization.
+ * @param contractAddress The address of the deployed Organisation contract.
+ * @param orgID The organisation ID from the contract.
+ * @returns The created organisation.
  */
-export async function createOrganization(orgName: string, ownerWalletAddress: string, contractAddress: string, paymentToken: string) {
-  return await prisma.organization.create({
+export async function createOrganisation(orgName: string | null, ownerWalletAddress: string, contractAddress: string, orgID: bigint) {
+  return await prisma.organisation.create({
     data: {
       name: orgName,
+      orgID,
       owner: {
         connect: {
           walletAddress: ownerWalletAddress,
         },
       },
       contractAddress,
-      paymentToken,
     },
   });
 }

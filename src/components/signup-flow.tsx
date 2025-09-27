@@ -17,7 +17,7 @@ import {
 import { motion } from 'framer-motion';
 import { useAccount } from 'wagmi';
 import { useENSProfile } from '@/hooks/useENS';
-import { createOrganization } from '@/lib/contract';
+import { deployOrganisation } from '@/lib/contract';
 import { CONTRACTS } from '@/lib/web3';
 
 interface SignupFlowProps {
@@ -27,6 +27,7 @@ interface SignupFlowProps {
     organizationName?: string;
     displayName?: string;
     contractAddress?: `0x${string}`;
+    orgID?: bigint;
   }) => void;
 }
 
@@ -35,6 +36,7 @@ export function SignupFlow({ isOpen, onComplete }: SignupFlowProps) {
   const [userType, setUserType] = useState<'EMPLOYER' | 'EMPLOYEE' | null>(null);
   const [organizationName, setOrganizationName] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const { address } = useAccount();
   const { displayName, ensName } = useENSProfile(address);
 
@@ -54,10 +56,23 @@ export function SignupFlow({ isOpen, onComplete }: SignupFlowProps) {
     if (!finalUserType) return;
 
     setIsLoading(true);
+    setError(null);
+    
     try {
       let contractAddress: `0x${string}` | undefined;
+      let orgID: bigint | undefined;
+      
       if (finalUserType === 'EMPLOYER' && organizationName) {
-        contractAddress = await createOrganization(organizationName, CONTRACTS.USDC as `0x${string}`);
+        console.log('Deploying organisation contract...');
+        const result = await deployOrganisation();
+        
+        if (result) {
+          contractAddress = result.organisationAddress;
+          orgID = result.orgID;
+          console.log(`Organisation deployed: ${contractAddress} with ID: ${orgID}`);
+        } else {
+          throw new Error('Failed to deploy organisation contract');
+        }
       }
 
       await onComplete({
@@ -65,7 +80,11 @@ export function SignupFlow({ isOpen, onComplete }: SignupFlowProps) {
         organizationName: finalUserType === 'EMPLOYER' ? organizationName : undefined,
         displayName: ensName || displayName || undefined,
         contractAddress,
+        orgID,
       });
+    } catch (err) {
+      console.error('Error during signup:', err);
+      setError(err instanceof Error ? err.message : 'An unexpected error occurred');
     } finally {
       setIsLoading(false);
     }
@@ -197,10 +216,16 @@ export function SignupFlow({ isOpen, onComplete }: SignupFlowProps) {
                   />
                 </div>
 
+                {error && (
+                  <div className="bg-red-50 border border-red-200 p-4 rounded-lg">
+                    <p className="text-red-800 text-sm">{error}</p>
+                  </div>
+                )}
+
                 <div className="bg-blue-50 p-4 rounded-lg">
                   <h4 className="font-medium text-blue-900 mb-2">What happens next?</h4>
                   <ul className="text-sm text-blue-800 space-y-1">
-                    <li>• Your organization will be set up</li>
+                    <li>• Your organisation contract will be deployed</li>
                     <li>• You can start adding employees</li>
                     <li>• Begin processing payroll immediately</li>
                   </ul>
@@ -220,7 +245,7 @@ export function SignupFlow({ isOpen, onComplete }: SignupFlowProps) {
                     className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
                   >
                     {isLoading ? (
-                      'Setting up...'
+                      'Deploying Organisation...'
                     ) : (
                       <>
                         Complete Setup

@@ -60,7 +60,7 @@ async function main() {
       Groth16Verifier: verifier.address,
       MockERC20: mockERC20.address,
       OrganisationFactory: organisationFactory.address,
-      chainId: 31337
+      chainId: 1337
   };
 
   fs.writeFileSync(path.join(__dirname, '../deployed-addresses.json'), JSON.stringify(addresses, null, 2));

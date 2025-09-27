@@ -55,6 +55,7 @@ export default function DashboardPage() {
     organizationName?: string;
     displayName?: string;
     contractAddress?: `0x${string}`;
+    orgID?: bigint;
   }) => {
     if (!address) return;
 
@@ -67,6 +68,7 @@ export default function DashboardPage() {
         body: JSON.stringify({
           walletAddress: address,
           ...userData,
+          orgID: userData.orgID ? userData.orgID.toString() : undefined,
         }),
       });
 

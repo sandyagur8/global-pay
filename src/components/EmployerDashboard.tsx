@@ -10,33 +10,70 @@ interface Organization {
 }
 
 const EmployerDashboard = () => {
-  const { address } = useAccount();
+  const { address, isConnected, chain } = useAccount();
   const [organization, setOrganization] = useState<Organization | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // Debug logging
+  console.log('EmployerDashboard - address:', address);
+  console.log('EmployerDashboard - isConnected:', isConnected);
+  console.log('EmployerDashboard - chain:', chain);
+
   useEffect(() => {
-    if (address) {
+    console.log('useEffect triggered with address:', address, 'isConnected:', isConnected);
+    
+    // Reset states
+    setLoading(true);
+    setError(null);
+    setOrganization(null);
+    
+    if (address && isConnected) {
+      let isCancelled = false;
+      
       const fetchOrganization = async () => {
         try {
+          console.log('Making API call with address:', address);
           const response = await fetch(
-            `/api/organization?walletAddress=${address}`
+            `/api/organization?walletAddress=${address}&t=${Date.now()}`,
+            { 
+              method: 'GET',
+              headers: {
+                'Cache-Control': 'no-cache',
+              }
+            }
           );
+          
+          if (isCancelled) return;
+          
           if (!response.ok) {
             throw new Error("Failed to fetch organization");
           }
           const data = await response.json();
-          setOrganization(data);
+          
+          if (!isCancelled) {
+            setOrganization(data);
+          }
         } catch (err) {
-          setError((err as Error).message);
+          if (!isCancelled) {
+            setError((err as Error).message);
+          }
         } finally {
-          setLoading(false);
+          if (!isCancelled) {
+            setLoading(false);
+          }
         }
       };
 
       fetchOrganization();
+      
+      return () => {
+        isCancelled = true;
+      };
+    } else {
+      setLoading(false);
     }
-  }, [address]);
+  }, [address, isConnected]);
 
   if (loading) {
     return <div>Loading...</div>;

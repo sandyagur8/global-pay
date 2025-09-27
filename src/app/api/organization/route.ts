@@ -15,14 +15,16 @@ export async function GET(req: NextRequest) {
   try {
     const user = await prisma.user.findUnique({
       where: { walletAddress },
-      include: { organizations: true },
+      include: { organisations: true },
     });
 
     if (!user) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
-    return NextResponse.json(user.organizations[0]);
+    // Return the first organisation if exists, otherwise null
+    const organisation = user.organisations.length > 0 ? user.organisations[0] : null;
+    return NextResponse.json(organisation);
   } catch (error) {
     console.error("Failed to fetch organization:", error);
     return NextResponse.json(

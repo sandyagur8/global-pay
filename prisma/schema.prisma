@@ -19,41 +19,48 @@ model User {
   walletAddress String         @unique
   userType      UserType       @default(EMPLOYEE)
   hasOnboarded  Boolean        @default(false)
-  organizations Organization[]
+  organisations Organisation[]
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
 
   @@map("users")
 }
 
-model Organization {
+model Organisation {
   id              String     @id @default(cuid())
-  name            String
-  contractAddress String     @unique // Address of the deployed Organization contract
+  name            String?    // Optional since contract doesn't store name
+  orgID           BigInt     @unique // Organisation ID from contract
+  contractAddress String     @unique // Address of the deployed Organisation contract
   owner           User       @relation(fields: [ownerId], references: [id])
   ownerId         String
-  paymentToken    String // Address of the payment token (USDC)
   isActive        Boolean    @default(true)
   employees       Employee[]
   createdAt       DateTime   @default(now())
   updatedAt       DateTime   @updatedAt
 
-  @@map("organizations")
+  @@map("organisations")
 }
 
 model Employee {
-  id              String       @id @default(cuid())
-  organization    Organization @relation(fields: [organizationId], references: [id])
-  organizationId  String
-  employeeAddress String
-  name            String? // Optional employee name/identifier
-  salaryPerSecond BigInt // Salary amount per second in wei
-  startDate       DateTime
-  isActive        Boolean      @default(true)
-  createdAt       DateTime     @default(now())
-  updatedAt       DateTime     @updatedAt
+  id                 String       @id @default(cuid())
+  organisation       Organisation @relation(fields: [organisationId], references: [id])
+  organisationId     String
+  employeeId         BigInt       // Employee ID from contract (nextEmployeeId)
+  employeeAddress    String
+  name               String?      // Optional employee name/identifier
+  
+  // Stealth address keys (stored as strings to handle BigInt)
+  publicViewerKeyX   String       // publicViewerKey[0]
+  publicViewerKeyY   String       // publicViewerKey[1]  
+  publicSpenderKeyX  String       // publicSpenderKey[0]
+  publicSpenderKeyY  String       // publicSpenderKey[1]
+  
+  isActive           Boolean      @default(true)
+  createdAt          DateTime     @default(now())
+  updatedAt          DateTime     @updatedAt
 
-  @@unique([organizationId, employeeAddress])
+  @@unique([organisationId, employeeAddress])
+  @@unique([organisationId, employeeId])
   @@map("employees")
 }
 
