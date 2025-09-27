@@ -57,15 +57,17 @@ export function SignupFlow({ isOpen, onComplete }: SignupFlowProps) {
 
     setIsLoading(true);
     setError(null);
-    
+
     try {
       let contractAddress: `0x${string}` | undefined;
       let orgID: bigint | undefined;
-      
+
       if (finalUserType === 'EMPLOYER' && organizationName) {
         console.log('Deploying organisation contract...');
         const result = await deployOrganisation();
-        
+
+        console.log(result)
+
         if (result) {
           contractAddress = result.organisationAddress;
           orgID = result.orgID;

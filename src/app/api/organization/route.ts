@@ -24,7 +24,13 @@ export async function GET(req: NextRequest) {
 
     // Return the first organisation if exists, otherwise null
     const organisation = user.organisations.length > 0 ? user.organisations[0] : null;
-    return NextResponse.json(organisation);
+
+    const safeOrg = {
+      ...organisation,
+      orgID: organisation?.orgID.toString(),
+    };
+
+    return NextResponse.json(safeOrg);
   } catch (error) {
     console.error("Failed to fetch organization:", error);
     return NextResponse.json(
