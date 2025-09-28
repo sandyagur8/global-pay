@@ -17,7 +17,8 @@ contract Organisation is Ownable(msg.sender) {
     struct Payment {
         bytes32 hash;
         uint32 chain_id;
-        address reciever;
+        address reciever /* stealth wallet addy */;
+        bytes ephermal_public_key;
     }
 
     // State variables
@@ -47,7 +48,8 @@ contract Organisation is Ownable(msg.sender) {
         address token,
         uint256 amount,
         uint256 indexed commitment,
-        bytes32 paymentId
+        bytes32 paymentId,
+        bytes ephermal_public_key
     );
 
     constructor(address _verifierAddress, uint256 _orgID) {
@@ -154,7 +156,8 @@ contract Organisation is Ownable(msg.sender) {
         uint[2] memory _pC,
         uint[8] memory _pubSignals,
         address stealth_address,
-        uint32 chain_id
+        uint32 chain_id,
+        bytes memory ephermal_public_key
     ) external onlyOwner {
         // Validate employee exists and is active
         require(
@@ -211,7 +214,8 @@ contract Organisation is Ownable(msg.sender) {
         commitmentToPayment[commitment] = Payment({
             hash: paymentId,
             chain_id: chain_id,
-            reciever: stealth_address
+            reciever: stealth_address,
+            ephermal_public_key: ephermal_public_key
         });
 
         emit PaymentDispatched(
@@ -219,7 +223,8 @@ contract Organisation is Ownable(msg.sender) {
             _token,
             _amount,
             commitment,
-            paymentId
+            paymentId,
+            ephermal_public_key
         );
     }
 
