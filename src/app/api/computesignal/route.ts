@@ -19,8 +19,30 @@ export async function POST(req: NextRequest) {
     }
 
     try {
-        console.log(user.publicSpenderKey, user.publicViewerKey, amount);
-        return NextResponse.json({ success: true }, { status: 200 });
+        const data = {
+            publicSpenderKey: user.publicSpenderKey,
+            publicViewerKey: user.publicViewerKey,
+            amount,
+        }
+
+        const response = await fetch("http://localhost:4000/compute-signals", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify(data),
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            return NextResponse.json({ error: errorData.error || "Failed to compute signals" }, { status: response.status });
+        }
+
+        const result = await response.json();
+
+        console.log(result);
+
+        return NextResponse.json({ signals: result.signals }, { status: 200 });
     } catch (err) {
         console.error(err);
         return NextResponse.json({ error: "Failed to compute signals" }, { status: 500 });

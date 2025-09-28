@@ -100,11 +100,11 @@ export async function dispatchPayment(
 }
 
 export async function addEmployee(
-    organisationAddress: `0x${string}`,
+    organisationAddress: string,
     publicViewerKey: [bigint, bigint],
     publicSpenderKey: [bigint, bigint],
 ) {
-    const organisationContract = await getContract(organisationAddress, OrganisationABI as Abi);
+    const organisationContract = await getContract(organisationAddress as `0x${string}`, OrganisationABI as Abi);
     if (!organisationContract) return;
 
     const { request } = await organisationContract.public.simulateContract({

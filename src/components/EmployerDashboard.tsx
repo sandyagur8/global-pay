@@ -1,4 +1,5 @@
 "use client";
+import { addEmployee } from "@/lib/contract";
 import React, { useState, useEffect } from "react";
 import { useAccount } from "wagmi";
 
@@ -99,6 +100,24 @@ const EmployerDashboard = () => {
         amount: amount
       }),
     });
+
+    if (!res.ok) {
+      const errorData = await res.json();
+      alert(`Error: ${errorData.error || "Failed to add employee"}`);
+      return;
+    }
+
+    const data = await res.json();
+    console.log("Signals computed:", data.signals);
+    const signals = data.signals;
+
+    const emp = await addEmployee(
+      organization!.contractAddress,
+      [BigInt(signals[0] as string), BigInt(signals[1] as string)],
+      [BigInt(signals[2] as string), BigInt(signals[3] as string)]
+    );
+
+    alert(`Employee added:${emp}`);
 
     console.log("Add employee placeholder - selected:", selectedEmployee);
     // TODO: actual implementation

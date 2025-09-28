@@ -5,7 +5,6 @@ const app = express();
 app.use(express.json());
 
 interface ComputeSignalsBody {
-    walletAddress: string;
     amount: string;
     publicSpenderKey: string;
     publicViewerKey: string;
@@ -19,8 +18,8 @@ app.post("/compute-signals", async (req: Request<{}, {}, ComputeSignalsBody>, re
     }
 
     try {
-        await computeSignals(publicSpenderKey, publicViewerKey, amount);
-        return res.status(200).json({ success: true });
+        const signals = await computeSignals(publicSpenderKey, publicViewerKey, amount);
+        return res.status(200).json({ signals: signals });
     } catch (err) {
         console.error(err);
         return res.status(500).json({ error: "Failed to compute signals" });
