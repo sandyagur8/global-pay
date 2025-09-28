@@ -1,5 +1,6 @@
 "use client";
 import { addEmployee } from "@/lib/contract";
+import { performEmployeeSwap, EmployeeSwapService } from "@/lib/swap-service";
 import React, { useState, useEffect } from "react";
 import { useAccount } from "wagmi";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -41,6 +42,7 @@ const EmployerDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [amount, setAmount] = useState("");
+  const [swapConfig] = useState(() => EmployeeSwapService.getSwapConfig());
 
   useEffect(() => {
     setLoading(true);
@@ -135,10 +137,33 @@ const EmployerDashboard = () => {
       [BigInt(signals[2] as string), BigInt(signals[3] as string)]
     );
 
-    alert(`Employee added:${emp}`);
+    console.log(`✅ Employee added successfully: ${emp}`);
 
-    console.log("Add employee placeholder - selected:", selectedEmployee);
-    // TODO: actual implementation
+    // After successful employee addition, check if we should perform swap
+    console.log('🔄 Checking swap configuration...');
+    
+    try {
+      const swapResult = await performEmployeeSwap(
+        selectedEmployee, // Employee wallet address
+        Number(amount) * 1000000 // Convert amount to USDC units (6 decimals)
+      );
+      
+      if (swapResult === null) {
+        console.log('⏭️ Swap skipped - network not set to base, continuing with other logic');
+        alert(`Employee added successfully: ${emp}\n\nSwap skipped (network not set to base)`);
+      } else if (swapResult.success) {
+        console.log('🎉 Swap completed successfully!');
+        alert(`Employee added successfully: ${emp}\n\n✅ USDC to WETH swap completed!\nSwap Tx: ${swapResult.swapTxHash}\nAmount: ${parseInt(swapResult.usdcAmount) / 1000000} USDC → ${parseInt(swapResult.estimatedWETH) / 1e18} WETH`);
+      } else {
+        console.error('❌ Swap failed:', swapResult.error);
+        alert(`Employee added successfully: ${emp}\n\n⚠️ Swap failed: ${swapResult.error}`);
+      }
+    } catch (swapError) {
+      console.error('❌ Unexpected swap error:', swapError);
+      alert(`Employee added successfully: ${emp}\n\n⚠️ Swap error: ${swapError instanceof Error ? swapError.message : 'Unknown error'}`);
+    }
+
+    console.log("Employee addition and swap process completed for:", selectedEmployee);
   };
 
   if (loading) {
@@ -236,6 +261,60 @@ const EmployerDashboard = () => {
                   <Label className="text-sm font-medium text-gray-600">Payment Token</Label>
                   <p className="text-lg font-semibold text-gray-900">{organization.paymentToken}</p>
                 </div>
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
+
+        {/* Swap Configuration Card */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.15 }}
+          className="mb-8"
+        >
+          <Card className={swapConfig.enabled ? "border-green-200 bg-green-50" : "border-yellow-200 bg-yellow-50"}>
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <DollarSign className="h-5 w-5 mr-2" />
+                1inch Swap Configuration
+                <span className={`ml-2 px-2 py-1 rounded-full text-xs font-medium ${
+                  swapConfig.enabled 
+                    ? 'bg-green-100 text-green-800' 
+                    : 'bg-yellow-100 text-yellow-800'
+                }`}>
+                  {swapConfig.enabled ? 'ENABLED' : 'DISABLED'}
+                </span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                <div>
+                  <Label className="text-sm font-medium text-gray-600">Network</Label>
+                  <p className="text-lg font-semibold text-gray-900">{swapConfig.network}</p>
+                </div>
+                <div>
+                  <Label className="text-sm font-medium text-gray-600">Status</Label>
+                  <p className={`text-lg font-semibold ${swapConfig.enabled ? 'text-green-600' : 'text-yellow-600'}`}>
+                    {swapConfig.enabled ? 'Active' : 'Inactive'}
+                  </p>
+                </div>
+                <div>
+                  <Label className="text-sm font-medium text-gray-600">Default Amount</Label>
+                  <p className="text-lg font-semibold text-gray-900">{swapConfig.defaultAmount} USDC</p>
+                </div>
+                <div>
+                  <Label className="text-sm font-medium text-gray-600">Slippage</Label>
+                  <p className="text-lg font-semibold text-gray-900">{swapConfig.slippage}%</p>
+                </div>
+              </div>
+              <div className="mt-4 p-3 bg-white rounded-lg border">
+                <p className="text-sm text-gray-600">
+                  {swapConfig.enabled 
+                    ? '✅ When employees are added, USDC will be automatically swapped to WETH and sent to their wallet.'
+                    : '⚠️ Swap is disabled. Set network to "base" in swap-config.ts to enable automatic USDC→WETH swaps.'
+                  }
+                </p>
               </div>
             </CardContent>
           </Card>
