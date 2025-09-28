@@ -5,6 +5,7 @@ const app = express();
 app.use(express.json());
 
 interface ComputeSignalsBody {
+    walletAddress: string;
     amount: string;
     publicSpenderKey: string;
     publicViewerKey: string;
