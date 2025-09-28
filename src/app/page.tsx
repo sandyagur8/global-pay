@@ -15,6 +15,8 @@ import {
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
+import { useAccount } from 'wagmi';
+import { useRouter } from 'next/navigation';
 
 const features = [
   {
@@ -49,6 +51,15 @@ const benefits = [
 ];
 
 export default function Home() {
+  const { isConnected } = useAccount();
+  const router = useRouter();
+
+  const handleGetStarted = () => {
+    if (isConnected) {
+      router.push('/dashboard');
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-purple-50">
       {/* Navigation */}
@@ -101,7 +112,18 @@ export default function Home() {
               transition={{ duration: 0.8, delay: 0.4 }}
               className="flex flex-col sm:flex-row gap-4 justify-center items-center"
             >
-              <CustomConnectButton />
+              {isConnected ? (
+                <Button 
+                  size="lg" 
+                  className="px-8 py-3 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+                  onClick={handleGetStarted}
+                >
+                  Get Started
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </Button>
+              ) : (
+                <CustomConnectButton />
+              )}
               <Button variant="outline" size="lg" className="px-8 py-3">
                 Learn More
                 <ArrowRight className="ml-2 h-4 w-4" />
@@ -192,9 +214,23 @@ export default function Home() {
                     Ready to Get Started?
                   </h3>
                   <p className="text-gray-600 mb-6">
-                    Connect your wallet and start paying your global team today.
+                    {isConnected 
+                      ? "You're connected! Click below to set up your organization or join as an employee."
+                      : "Connect your wallet and start paying your global team today."
+                    }
                   </p>
-                  <CustomConnectButton />
+                  {isConnected ? (
+                    <Button 
+                      size="lg" 
+                      className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+                      onClick={handleGetStarted}
+                    >
+                      Get Started
+                      <ArrowRight className="ml-2 h-4 w-4" />
+                    </Button>
+                  ) : (
+                    <CustomConnectButton />
+                  )}
                 </div>
               </Card>
             </div>

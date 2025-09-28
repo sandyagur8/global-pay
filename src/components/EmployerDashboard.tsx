@@ -2,6 +2,24 @@
 import { addEmployee } from "@/lib/contract";
 import React, { useState, useEffect } from "react";
 import { useAccount } from "wagmi";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { 
+  Building2, 
+  Users, 
+  DollarSign, 
+  Plus, 
+  Send,
+  Wallet,
+  TrendingUp,
+  Clock,
+  UserPlus,
+  Settings,
+  Eye
+} from "lucide-react";
+import { motion } from "framer-motion";
 
 interface Organization {
   id: string;
@@ -123,65 +141,297 @@ const EmployerDashboard = () => {
     // TODO: actual implementation
   };
 
-  if (loading) return <div>Loading...</div>;
-  if (error) return <div>Error: {error}</div>;
-  if (!organization) return <div>No organization found for this user.</div>;
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-purple-50 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-purple-50 flex items-center justify-center">
+        <Card className="max-w-md">
+          <CardContent className="p-6 text-center">
+            <div className="text-red-600 mb-4">⚠️</div>
+            <h3 className="text-lg font-semibold mb-2">Error Loading Dashboard</h3>
+            <p className="text-gray-600 mb-4">{error}</p>
+            <Button onClick={() => window.location.reload()}>Try Again</Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  if (!organization) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-purple-50 flex items-center justify-center">
+        <Card className="max-w-md">
+          <CardContent className="p-6 text-center">
+            <Building2 className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+            <h3 className="text-lg font-semibold mb-2">No Organization Found</h3>
+            <p className="text-gray-600 mb-4">We couldn't find an organization associated with your wallet.</p>
+            <Button onClick={() => window.location.reload()}>Refresh</Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
-    <div>
-      <h2 className="text-2xl font-bold mb-4">Organization Details</h2>
-      <div className="space-y-2 mb-6">
-        <p>
-          <strong>Name:</strong> {organization.name}
-        </p>
-        <p>
-          <strong>Contract Address:</strong> {organization.contractAddress}
-        </p>
-        <p>
-          <strong>Payment Token:</strong> {organization.paymentToken}
-        </p>
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-purple-50">
+      {/* Header */}
+      <div className="bg-white border-b">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900">Employer Dashboard</h1>
+              <p className="text-gray-600">Manage your organization and payroll</p>
+            </div>
+            <div className="flex items-center space-x-4">
+              <div className="flex items-center space-x-2 bg-gray-100 px-3 py-2 rounded-lg">
+                <Wallet className="h-4 w-4 text-gray-600" />
+                <span className="text-sm font-mono text-gray-800">
+                  {address ? `${address.slice(0, 6)}...${address.slice(-4)}` : 'Not connected'}
+                </span>
+              </div>
+              <Button variant="outline" size="sm">
+                <Settings className="h-4 w-4 mr-2" />
+                Settings
+              </Button>
+            </div>
+          </div>
+        </div>
       </div>
 
-      <h3 className="text-xl font-semibold mb-2">Add Employee</h3>
-      {employees.length === 0 ? (
-        <p>No employees available.</p>
-      ) : (
-        <form onSubmit={handleAddEmployee} className="space-y-4">
-          <select
-            className="border p-2 rounded w-full"
-            value={selectedEmployee}
-            onChange={(e) => {
-              console.log(e.target.value)
-              setSelectedEmployee(e.target.value)
-            }
-            }
-            required
-          >
-            <option value="">Select Employee</option>
-            {employees.map((emp, idx) => (
-              <option key={idx} value={emp.walletAddress}>
-                {emp.walletAddress}
-              </option>
-            ))}
-          </select>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Organization Info Card */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+          className="mb-8"
+        >
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <Building2 className="h-5 w-5 mr-2" />
+                Organization Details
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div>
+                  <Label className="text-sm font-medium text-gray-600">Organization Name</Label>
+                  <p className="text-lg font-semibold text-gray-900">{organization.name}</p>
+                </div>
+                <div>
+                  <Label className="text-sm font-medium text-gray-600">Contract Address</Label>
+                  <p className="text-sm font-mono text-gray-900 bg-gray-100 px-2 py-1 rounded">
+                    {organization.contractAddress.slice(0, 10)}...{organization.contractAddress.slice(-8)}
+                  </p>
+                </div>
+                <div>
+                  <Label className="text-sm font-medium text-gray-600">Payment Token</Label>
+                  <p className="text-lg font-semibold text-gray-900">{organization.paymentToken}</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
 
-          <input
-            type="number"
-            placeholder="Enter amount"
-            className="border p-2 rounded w-full"
-            value={amount}
-            onChange={(e) => setAmount(e.target.value)}
-            required
-          />
-
-          <button
-            type="submit"
-            className="bg-blue-600 text-white px-4 py-2 rounded"
+        {/* Stats Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
           >
-            Add Employee
-          </button>
-        </form>
-      )}
+            <Card>
+              <CardContent className="p-6">
+                <div className="flex items-center">
+                  <div className="p-2 bg-blue-100 rounded-lg">
+                    <Users className="h-6 w-6 text-blue-600" />
+                  </div>
+                  <div className="ml-4">
+                    <p className="text-sm font-medium text-gray-600">Total Employees</p>
+                    <p className="text-2xl font-bold text-gray-900">{employees.length}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3 }}
+          >
+            <Card>
+              <CardContent className="p-6">
+                <div className="flex items-center">
+                  <div className="p-2 bg-green-100 rounded-lg">
+                    <DollarSign className="h-6 w-6 text-green-600" />
+                  </div>
+                  <div className="ml-4">
+                    <p className="text-sm font-medium text-gray-600">Total Paid</p>
+                    <p className="text-2xl font-bold text-gray-900">$0.00</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.4 }}
+          >
+            <Card>
+              <CardContent className="p-6">
+                <div className="flex items-center">
+                  <div className="p-2 bg-purple-100 rounded-lg">
+                    <Clock className="h-6 w-6 text-purple-600" />
+                  </div>
+                  <div className="ml-4">
+                    <p className="text-sm font-medium text-gray-600">This Month</p>
+                    <p className="text-2xl font-bold text-gray-900">$0.00</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
+        </div>
+
+        {/* Employee Management */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.5 }}
+          className="mb-8"
+        >
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center justify-between">
+                <span className="flex items-center">
+                  <Users className="h-5 w-5 mr-2" />
+                  Employee Management
+                </span>
+                <Button size="sm">
+                  <UserPlus className="h-4 w-4 mr-2" />
+                  Add Employee
+                </Button>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {employees.length === 0 ? (
+                <div className="text-center py-8">
+                  <Users className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                  <p className="text-gray-600 mb-2">No employees added yet</p>
+                  <p className="text-sm text-gray-500 mb-4">Add employees to start managing payroll</p>
+                  <Button>
+                    <UserPlus className="h-4 w-4 mr-2" />
+                    Add Your First Employee
+                  </Button>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {employees.map((employee, idx) => (
+                    <div
+                      key={idx}
+                      className="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
+                    >
+                      <div className="flex items-center space-x-4">
+                        <div className="p-2 bg-blue-100 rounded-lg">
+                          <Users className="h-5 w-5 text-blue-600" />
+                        </div>
+                        <div>
+                          <p className="font-medium text-gray-900">Employee #{idx + 1}</p>
+                          <p className="text-sm font-mono text-gray-600">
+                            {employee.walletAddress.slice(0, 10)}...{employee.walletAddress.slice(-8)}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Button variant="outline" size="sm">
+                          <Eye className="h-4 w-4 mr-2" />
+                          View
+                        </Button>
+                        <Button size="sm">
+                          <Send className="h-4 w-4 mr-2" />
+                          Pay
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </motion.div>
+
+        {/* Payment Form */}
+        {employees.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.6 }}
+          >
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <Send className="h-5 w-5 mr-2" />
+                  Send Payment
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <form onSubmit={handleAddEmployee} className="space-y-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                      <Label htmlFor="employee">Select Employee</Label>
+                      <select
+                        id="employee"
+                        className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        value={selectedEmployee}
+                        onChange={(e) => setSelectedEmployee(e.target.value)}
+                        required
+                      >
+                        <option value="">Choose an employee</option>
+                        {employees.map((emp, idx) => (
+                          <option key={idx} value={emp.walletAddress}>
+                            Employee #{idx + 1} ({emp.walletAddress.slice(0, 10)}...)
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div>
+                      <Label htmlFor="amount">Payment Amount</Label>
+                      <Input
+                        id="amount"
+                        type="number"
+                        placeholder="Enter amount"
+                        value={amount}
+                        onChange={(e) => setAmount(e.target.value)}
+                        required
+                        className="mt-1"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex justify-end">
+                    <Button type="submit" className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700">
+                      <Send className="h-4 w-4 mr-2" />
+                      Send Payment
+                    </Button>
+                  </div>
+                </form>
+              </CardContent>
+            </Card>
+          </motion.div>
+        )}
+      </div>
     </div>
   );
 };

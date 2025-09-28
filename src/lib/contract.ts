@@ -6,8 +6,8 @@ import { Abi, decodeEventLog, parseAbiItem } from 'viem';
 
 
 export async function getContract(address: `0x${string}`, abi: Abi) {
-    const publicClient = getPublicClient(config, { chainId: 1337 });
-    const walletClient = await getWalletClient(config, { chainId: 1337 });
+    const publicClient = getPublicClient(config, { chainId: 31 });
+    const walletClient = await getWalletClient(config, { chainId: 31 });
 
     if (!publicClient || !walletClient) {
         return null;

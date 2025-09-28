@@ -1,6 +1,6 @@
 {
-  "Groth16Verifier": "0xDc64a140Aa3E981100a9becA4E685f962f0cF6C9",
-  "MockERC20": "0x5FC8d32690cc91D4c39d9d3abcBD16989F875707",
-  "OrganisationFactory": "0x0165878A594ca255338adfa4d48449f69242Eb8F",
-  "chainId": 1337
+    "Groth16Verifier": "0x24454d1765911030ef08CB620424aD8987DAefE1",
+    "MockERC20": "0x53ed3fdFd73A1d6b14478AE0659D034c61043779",
+    "OrganisationFactory": "0xD18ed1024AB6223f9d79b7BC465cf6DEB18d1907",
+    "chainId": 31
 }

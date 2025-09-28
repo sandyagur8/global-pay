@@ -23,24 +23,42 @@ export default function DashboardPage() {
   useEffect(() => {
     async function fetchUser() {
       if (address) {
+        console.log('🔍 Checking user for address:', address);
         setLoading(true);
         try {
           const response = await fetch(`/api/user/get?walletAddress=${address}`);
+          console.log('📡 API Response status:', response.status);
+          
           if (response.status === 404) {
+            console.log('👤 User not found, showing signup flow');
             setShowSignupFlow(true);
             setUser(null);
-          } else {
+          } else if (response.ok) {
             const data = await response.json();
+            console.log('✅ User found:', data);
             setUser(data);
             setShowSignupFlow(false);
+          } else {
+            console.error('❌ API Error:', response.status);
+            // If there's an API error, show signup flow as fallback
+            setShowSignupFlow(true);
+            setUser(null);
           }
         } catch (error) {
           console.error("Error checking user:", error);
+          // On network error, show signup flow as fallback
+          setShowSignupFlow(true);
           setUser(null);
         } finally {
           setLoading(false);
         }
+        
+        // TEMPORARY: Force signup flow for testing
+        // TODO: Remove this line after testing
+        setShowSignupFlow(true);
+        setUser(null);
       } else {
+        console.log('🔌 No wallet address, waiting for connection');
         setLoading(false);
         setUser(null);
         setShowSignupFlow(false);
@@ -84,21 +102,52 @@ export default function DashboardPage() {
     }
   };
 
+  console.log('🎯 Dashboard render state:', { loading, address: !!address, showSignupFlow, user: !!user, userType: user?.userType });
+
   if (loading) {
-    return <LoadingSpinner />;
+    console.log('⏳ Showing loading spinner');
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-purple-50 flex items-center justify-center">
+        <LoadingSpinner />
+      </div>
+    );
   }
 
   if (!address) {
-    return <div>Please connect your wallet.</div>;
+    console.log('🔌 No wallet connected');
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-purple-50 flex items-center justify-center">
+        <div className="text-center">
+          <h2 className="text-2xl font-bold text-gray-900 mb-4">Wallet Not Connected</h2>
+          <p className="text-gray-600">Please connect your wallet to access the dashboard.</p>
+        </div>
+      </div>
+    );
   }
 
   if (showSignupFlow) {
-    return <SignupFlow isOpen={showSignupFlow} onComplete={handleSignupComplete} />;
+    console.log('📝 Showing signup flow');
+    return <SignupFlow isOpen={true} onComplete={handleSignupComplete} />;
   }
 
   if (user) {
+    console.log('👤 Showing dashboard for user type:', user.userType);
     return user.userType === 'EMPLOYER' ? <EmployerDashboard /> : <EmployeeDashboard />;
   }
 
-  return <div>Something went wrong.</div>;
+  console.log('❓ Fallback state - something went wrong');
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-purple-50 flex items-center justify-center">
+      <div className="text-center">
+        <h2 className="text-2xl font-bold text-gray-900 mb-4">Something went wrong</h2>
+        <p className="text-gray-600 mb-4">We couldn't load your dashboard. Please try refreshing the page.</p>
+        <button 
+          onClick={() => window.location.reload()} 
+          className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+        >
+          Refresh Page
+        </button>
+      </div>
+    </div>
+  );
 }

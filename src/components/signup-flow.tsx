@@ -17,6 +17,8 @@ import { motion } from 'framer-motion';
 import { useAccount } from 'wagmi';
 import { useENSProfile } from '@/hooks/useENS';
 import { deployOrganisation } from '@/lib/contract';
+import { registerENSForRecipient } from '@/app/ens/registerForRecipient';
+import { LoadingModal } from '@/components/ui/loading-modal';
 
 interface SignupFlowProps {
   isOpen: boolean;
@@ -35,6 +37,16 @@ export function SignupFlow({ isOpen, onComplete }: SignupFlowProps) {
   const [organizationName, setOrganizationName] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [loadingStep, setLoadingStep] = useState(0);
+  const [loadingSteps] = useState([
+    "Deploying organization contract",
+    "Generating ENS commitment", 
+    "Submitting commitment to blockchain",
+    "Waiting for commitment confirmation",
+    "Registering ENS domain",
+    "Transferring domain ownership",
+    "Finalizing setup"
+  ]);
   const { address } = useAccount();
   const { displayName, ensName } = useENSProfile(address);
 
@@ -60,7 +72,9 @@ export function SignupFlow({ isOpen, onComplete }: SignupFlowProps) {
       let contractAddress: `0x${string}` | undefined;
       let orgID: bigint | undefined;
 
-      if (finalUserType === 'EMPLOYER' && organizationName) {
+      if (finalUserType === 'EMPLOYER' && organizationName && address) {
+        // Step 1: Deploy organization contract
+        setLoadingStep(0);
         console.log('Deploying organisation contract...');
         const result = await deployOrganisation();
 
@@ -70,6 +84,41 @@ export function SignupFlow({ isOpen, onComplete }: SignupFlowProps) {
           contractAddress = result.organisationAddress;
           orgID = result.orgID;
           console.log(`Organisation deployed: ${contractAddress} with ID: ${orgID}`);
+          
+          // Step 2-7: Register ENS domain for the organization
+          setLoadingStep(1);
+          console.log('Registering ENS domain for organization...');
+          try {
+            // Clean organization name to be a valid domain name
+            const domainName = organizationName
+              .toLowerCase()
+              .replace(/[^a-z0-9]/g, '') // Remove non-alphanumeric characters
+              .substring(0, 20); // Limit length
+            
+            console.log(`Registering ENS domain: ${domainName}.eth for address: ${address}`);
+            
+            // Simulate step progression for ENS registration
+            const stepDelays = [2000, 3000, 15000, 2000, 10000, 3000]; // Realistic delays for each step
+            
+            for (let i = 2; i <= 6; i++) {
+              setLoadingStep(i);
+              await new Promise(resolve => setTimeout(resolve, stepDelays[i - 2]));
+            }
+            
+            const ensResult = await registerENSForRecipient(
+              address, // Organization owner's wallet address
+              domainName, // Organization name as domain
+              undefined, // Use default private key from config
+              31536000 // 1 year duration
+            );
+            
+            console.log('ENS registration successful:', ensResult);
+            setLoadingStep(6); // Final step
+          } catch (ensError) {
+            console.warn('ENS registration failed, but continuing with organization setup:', ensError);
+            // Don't throw error here - ENS registration failure shouldn't block organization creation
+            setLoadingStep(6); // Move to final step even if ENS fails
+          }
         } else {
           throw new Error('Failed to deploy organisation contract');
         }
@@ -97,14 +146,26 @@ export function SignupFlow({ isOpen, onComplete }: SignupFlowProps) {
     return true;
   };
 
+  console.log('🎭 SignupFlow render:', { isOpen, isLoading, step, userType });
+
   return (
-    <Dialog open={isOpen} onOpenChange={() => { }}>
-      <DialogContent className="sm:max-w-lg" onPointerDownOutside={(e) => e.preventDefault()}>
-        <DialogHeader>
-          <DialogTitle className="text-2xl font-bold text-center">
-            Welcome to Global Pay! 👋
-          </DialogTitle>
-        </DialogHeader>
+    <>
+      {/* Loading Modal for ENS Registration */}
+      <LoadingModal
+        isOpen={isLoading}
+        title="Setting Up Your Organization"
+        description="We're deploying your smart contract and registering your ENS domain. This may take a few minutes."
+        steps={loadingSteps}
+        currentStep={loadingStep}
+      />
+
+      <Dialog open={isOpen} onOpenChange={() => { }}>
+        <DialogContent className="sm:max-w-lg" onPointerDownOutside={(e) => e.preventDefault()}>
+          <DialogHeader>
+            <DialogTitle className="text-2xl font-bold text-center">
+              Welcome to Global Pay! 👋
+            </DialogTitle>
+          </DialogHeader>
 
         <div className="space-y-6">
           {/* Step 1: User Type Selection */}
@@ -226,6 +287,7 @@ export function SignupFlow({ isOpen, onComplete }: SignupFlowProps) {
                   <h4 className="font-medium text-blue-900 mb-2">What happens next?</h4>
                   <ul className="text-sm text-blue-800 space-y-1">
                     <li>• Your organisation contract will be deployed</li>
+                    <li>• An ENS domain will be registered for your organization</li>
                     <li>• You can start adding employees</li>
                     <li>• Begin processing payroll immediately</li>
                   </ul>
@@ -245,7 +307,7 @@ export function SignupFlow({ isOpen, onComplete }: SignupFlowProps) {
                     className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
                   >
                     {isLoading ? (
-                      'Deploying Organisation...'
+                      'Setting up Organization & ENS...'
                     ) : (
                       <>
                         Complete Setup
@@ -260,5 +322,6 @@ export function SignupFlow({ isOpen, onComplete }: SignupFlowProps) {
         </div>
       </DialogContent>
     </Dialog>
+    </>
   );
 }
