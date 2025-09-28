@@ -2,9 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { useAccount } from "wagmi";
+import { useRouter } from "next/navigation";
 import { SignupFlow } from "@/components/signup-flow";
-import EmployeeDashboard from "@/components/EmployeeDashboard";
-import EmployerDashboard from "@/components/EmployerDashboard";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 
 interface User {
@@ -16,6 +15,7 @@ interface User {
 
 export default function DashboardPage() {
   const { address } = useAccount();
+  const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [showSignupFlow, setShowSignupFlow] = useState(false);
@@ -36,6 +36,16 @@ export default function DashboardPage() {
           } else if (response.ok) {
             const data = await response.json();
             console.log('✅ User found:', data);
+            // Redirect to appropriate dashboard based on user type
+            if (data.userType === 'EMPLOYER') {
+              console.log('🏢 Redirecting to employer dashboard');
+              router.push('/dashboard/employer');
+              return;
+            } else if (data.userType === 'EMPLOYEE') {
+              console.log('👤 Redirecting to employee dashboard');
+              router.push('/dashboard/employee');
+              return;
+            }
             setUser(data);
             setShowSignupFlow(false);
           } else {
@@ -52,11 +62,6 @@ export default function DashboardPage() {
         } finally {
           setLoading(false);
         }
-        
-        // TEMPORARY: Force signup flow for testing
-        // TODO: Remove this line after testing
-        setShowSignupFlow(true);
-        setUser(null);
       } else {
         console.log('🔌 No wallet address, waiting for connection');
         setLoading(false);
@@ -75,25 +80,44 @@ export default function DashboardPage() {
     contractAddress?: `0x${string}`;
     orgID?: bigint;
   }) => {
-    if (!address) return;
+    console.log('🎯 handleSignupComplete called with:', userData);
+    
+    if (!address) {
+      console.error('❌ No wallet address available');
+      return;
+    }
 
     try {
+      const requestBody = {
+        walletAddress: address,
+        ...userData,
+        orgID: userData.orgID ? userData.orgID.toString() : undefined,
+      };
+      
+      console.log('📤 Sending API request:', requestBody);
+      
       const response = await fetch('/api/user/create', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          walletAddress: address,
-          ...userData,
-          orgID: userData.orgID ? userData.orgID.toString() : undefined,
-        }),
+        body: JSON.stringify(requestBody),
       });
+      
+      console.log('📡 API Response status:', response.status);
 
       if (response.ok) {
         const newUser = await response.json();
-        setUser(newUser);
-        setShowSignupFlow(false);
+        console.log('🎉 User created successfully:', newUser);
+        
+        // Redirect to appropriate dashboard based on user type
+        if (newUser.userType === 'EMPLOYER') {
+          console.log('🏢 Redirecting new employer to employer dashboard');
+          router.push('/dashboard/employer');
+        } else if (newUser.userType === 'EMPLOYEE') {
+          console.log('👤 Redirecting new employee to employee dashboard');
+          router.push('/dashboard/employee');
+        }
       } else {
         console.error("Failed to create user");
       }
@@ -130,9 +154,15 @@ export default function DashboardPage() {
     return <SignupFlow isOpen={true} onComplete={handleSignupComplete} />;
   }
 
+  // This should not be reached as users are redirected to specific dashboards
   if (user) {
-    console.log('👤 Showing dashboard for user type:', user.userType);
-    return user.userType === 'EMPLOYER' ? <EmployerDashboard /> : <EmployeeDashboard />;
+    console.log('⚠️ User found but not redirected - this should not happen');
+    if (user.userType === 'EMPLOYER') {
+      router.push('/dashboard/employer');
+    } else {
+      router.push('/dashboard/employee');
+    }
+    return null;
   }
 
   console.log('❓ Fallback state - something went wrong');

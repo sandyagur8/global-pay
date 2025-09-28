@@ -51,19 +51,27 @@ export function SignupFlow({ isOpen, onComplete }: SignupFlowProps) {
   const { displayName, ensName } = useENSProfile(address);
 
   const handleUserTypeSelection = (type: 'EMPLOYER' | 'EMPLOYEE') => {
+    console.log('👤 User selected type:', type);
     setUserType(type);
     if (type === 'EMPLOYEE') {
       // For employees, we can complete immediately
+      console.log('🏃‍♂️ Employee selected, completing signup immediately');
       handleComplete(type);
     } else {
       // For employers, go to organization setup
+      console.log('🏢 Employer selected, going to step 2');
       setStep(2);
     }
   };
 
   const handleComplete = async (selectedUserType?: 'EMPLOYER' | 'EMPLOYEE') => {
     const finalUserType = selectedUserType || userType;
-    if (!finalUserType) return;
+    console.log('🎯 handleComplete called with:', { selectedUserType, userType, finalUserType });
+    
+    if (!finalUserType) {
+      console.error('❌ No user type provided');
+      return;
+    }
 
     setIsLoading(true);
     setError(null);
@@ -71,6 +79,10 @@ export function SignupFlow({ isOpen, onComplete }: SignupFlowProps) {
     try {
       let contractAddress: `0x${string}` | undefined;
       let orgID: bigint | undefined;
+
+      if (finalUserType === 'EMPLOYEE') {
+        console.log('👤 Processing employee signup - no contract deployment needed');
+      }
 
       if (finalUserType === 'EMPLOYER' && organizationName && address) {
         // Step 1: Deploy organization contract
@@ -124,13 +136,16 @@ export function SignupFlow({ isOpen, onComplete }: SignupFlowProps) {
         }
       }
 
-      await onComplete({
+      const userData = {
         userType: finalUserType,
         organizationName: finalUserType === 'EMPLOYER' ? organizationName : undefined,
         displayName: ensName || displayName || undefined,
         contractAddress,
         orgID,
-      });
+      };
+      
+      console.log('📤 Calling onComplete with userData:', userData);
+      await onComplete(userData);
     } catch (err) {
       console.error('Error during signup:', err);
       setError(err instanceof Error ? err.message : 'An unexpected error occurred');

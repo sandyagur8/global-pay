@@ -25,13 +25,19 @@ export async function POST(req: NextRequest) {
       preferedToken: null,
     };
 
-    await upsertUser(walletAddress, userData);
+    const user = await upsertUser(walletAddress, userData);
 
     if (userType === 'EMPLOYER' && contractAddress && orgID) {
       await createOrganisation(organizationName || null, walletAddress, contractAddress, BigInt(orgID));
     }
 
-    return NextResponse.json({ success: true });
+    // Return the user data so the frontend can redirect properly
+    return NextResponse.json({
+      id: user.id,
+      walletAddress: user.walletAddress,
+      userType: user.userType,
+      hasOnboarded: true
+    });
   } catch (error) {
     console.error("Error creating user:", error);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });

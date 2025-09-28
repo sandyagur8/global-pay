@@ -26,6 +26,7 @@ interface Payment {
 }
 
 const EmployeeDashboard = () => {
+  console.log('🎭 EmployeeDashboard component rendered');
   const { address } = useAccount();
   const [payments, setPayments] = useState<Payment[]>([]);
   const [totalEarnings, setTotalEarnings] = useState("0.00");
