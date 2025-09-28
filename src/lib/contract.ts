@@ -6,19 +6,19 @@ import { Abi, decodeEventLog, parseAbiItem } from 'viem';
 
 
 export async function getContract(address: `0x${string}`, abi: Abi) {
-  const publicClient = getPublicClient(config, { chainId: 1337 });
-  const walletClient = await getWalletClient(config, { chainId: 1337 });
+    const publicClient = getPublicClient(config, { chainId: 1337 });
+    const walletClient = await getWalletClient(config, { chainId: 1337 });
 
-  if (!publicClient || !walletClient) {
-    return null;
-  }
+    if (!publicClient || !walletClient) {
+        return null;
+    }
 
-  return {
-    address,
-    abi,
-    public: publicClient,
-    wallet: walletClient,
-  };
+    return {
+        address,
+        abi,
+        public: publicClient,
+        wallet: walletClient,
+    };
 }
 
 export async function deployOrganisation() {
@@ -103,7 +103,6 @@ export async function addEmployee(
     organisationAddress: `0x${string}`,
     publicViewerKey: [bigint, bigint],
     publicSpenderKey: [bigint, bigint],
-    employeeAddress: `0x${string}`
 ) {
     const organisationContract = await getContract(organisationAddress, OrganisationABI as Abi);
     if (!organisationContract) return;
@@ -112,7 +111,7 @@ export async function addEmployee(
         address: organisationContract.address,
         abi: organisationContract.abi,
         functionName: 'addEmployee',
-        args: [publicViewerKey, publicSpenderKey, employeeAddress],
+        args: [publicViewerKey, publicSpenderKey],
         account: organisationContract.wallet.account.address,
     });
 

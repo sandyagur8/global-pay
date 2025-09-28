@@ -14,6 +14,15 @@ export async function GET(req: NextRequest) {
   try {
     const user = await prisma.user.findUnique({
       where: { walletAddress },
+      select: {
+        id: true,
+        walletAddress: true,
+        userType: true,
+        publicSpenderKey: true,
+        publicViewerKey: true,
+        preferedChainId: true,
+        preferedToken: true,
+      }
     });
 
     if (!user) {

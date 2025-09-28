@@ -1,8 +1,7 @@
-// src/app/api/user/create/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import { upsertUser, createOrganisation } from "@/lib/db";
 import { Prisma } from "@/generated/prisma";
-import { createWallet } from "@/lib/utils";
+import { ethers } from "ethers6";
 
 export async function POST(req: NextRequest) {
   const { walletAddress, userType, organizationName, contractAddress, orgID } = await req.json();
@@ -13,16 +12,17 @@ export async function POST(req: NextRequest) {
 
   try {
 
-    const spentKey = createWallet();
-    const viewKey = createWallet();
+    const spentKey = ethers.Wallet.createRandom();
+    const viewKey = ethers.Wallet.createRandom();
 
     const userData: Partial<Prisma.UserCreateInput> = {
       userType,
-      hasOnboarded: true,
-      publicSpenderKey: spentKey.address,
-      privateSpenderKey: spentKey.privateKey,
-      publicViewerKey: viewKey.address,
-      privateViewerKey: viewKey.privateKey,
+      publicSpenderKey: spentKey.signingKey.publicKey,
+      privateSpenderKey: spentKey.signingKey.privateKey,
+      publicViewerKey: viewKey.signingKey.publicKey,
+      privateViewerKey: viewKey.signingKey.privateKey,
+      preferedChainId: null,
+      preferedToken: null,
     };
 
     await upsertUser(walletAddress, userData);

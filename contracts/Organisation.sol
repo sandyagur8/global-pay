@@ -22,7 +22,6 @@ contract Organisation is Ownable(msg.sender) {
 
     // State variables
     mapping(uint256 => Employee) public employees;
-    mapping(address => uint256) public addressToEmployeeId;
     uint256 public nextEmployeeId = 1;
     uint256 public immutable orgID;
     uint256 public immutable ROOT_STOCK_CHAIN_ID = 31;
@@ -60,19 +59,11 @@ contract Organisation is Ownable(msg.sender) {
      * @dev Add a new employee with their stealth address keys
      * @param _publicViewerKey The public viewer key coordinates [x, y]
      * @param _publicSpenderKey The public spender key coordinates [x, y]
-     * @param _employeeAddress The employee's wallet address for mapping
      */
     function addEmployee(
         uint256[2] memory _publicViewerKey,
-        uint256[2] memory _publicSpenderKey,
-        address _employeeAddress
+        uint256[2] memory _publicSpenderKey
     ) external onlyOwner {
-        require(_employeeAddress != address(0), "Invalid employee address");
-        require(
-            addressToEmployeeId[_employeeAddress] == 0,
-            "Employee already exists"
-        );
-
         uint256 employeeId = nextEmployeeId++;
 
         employees[employeeId] = Employee({
@@ -81,8 +72,6 @@ contract Organisation is Ownable(msg.sender) {
             isActive: true,
             employeeId: employeeId
         });
-
-        addressToEmployeeId[_employeeAddress] = employeeId;
 
         emit EmployeeAdded(employeeId, _publicViewerKey, _publicSpenderKey);
     }
@@ -263,17 +252,6 @@ contract Organisation is Ownable(msg.sender) {
             "Employee does not exist"
         );
         return employees[_employeeId];
-    }
-
-    /**
-     * @dev Get employee ID by address
-     * @param _employeeAddress The employee's wallet address
-     * @return uint256 The employee ID (0 if not found)
-     */
-    function getEmployeeIdByAddress(
-        address _employeeAddress
-    ) external view returns (uint256) {
-        return addressToEmployeeId[_employeeAddress];
     }
 
     /**

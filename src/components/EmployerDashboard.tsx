@@ -9,64 +9,67 @@ interface Organization {
   paymentToken: string;
 }
 
+interface Employee {
+  id: string;
+  walletAddress: string;
+}
+
 const EmployerDashboard = () => {
   const { address, isConnected, chain } = useAccount();
   const [organization, setOrganization] = useState<Organization | null>(null);
+  const [employees, setEmployees] = useState<Employee[]>([]);
+  const [selectedEmployee, setSelectedEmployee] = useState<string>("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
-  // Debug logging
-  console.log('EmployerDashboard - address:', address);
-  console.log('EmployerDashboard - isConnected:', isConnected);
-  console.log('EmployerDashboard - chain:', chain);
+  const [amount, setAmount] = useState("");
 
   useEffect(() => {
-    console.log('useEffect triggered with address:', address, 'isConnected:', isConnected);
-    
-    // Reset states
     setLoading(true);
     setError(null);
     setOrganization(null);
-    
+
     if (address && isConnected) {
       let isCancelled = false;
-      
+
       const fetchOrganization = async () => {
         try {
-          console.log('Making API call with address:', address);
           const response = await fetch(
             `/api/organization?walletAddress=${address}&t=${Date.now()}`,
-            { 
-              method: 'GET',
-              headers: {
-                'Cache-Control': 'no-cache',
-              }
-            }
+            { method: "GET", headers: { "Cache-Control": "no-cache" } }
           );
-          
+
           if (isCancelled) return;
-          
-          if (!response.ok) {
-            throw new Error("Failed to fetch organization");
-          }
+
+          if (!response.ok) throw new Error("Failed to fetch organization");
+
           const data = await response.json();
-          
-          if (!isCancelled) {
-            setOrganization(data);
-          }
+          if (!isCancelled) setOrganization(data);
         } catch (err) {
-          if (!isCancelled) {
-            setError((err as Error).message);
-          }
+          if (!isCancelled) setError((err as Error).message);
         } finally {
-          if (!isCancelled) {
-            setLoading(false);
-          }
+          if (!isCancelled) setLoading(false);
+        }
+      };
+
+      const fetchEmployees = async () => {
+        try {
+          const response = await fetch("/api/employees", {
+            method: "GET",
+            headers: { "Cache-Control": "no-cache" },
+          });
+
+          if (!response.ok) throw new Error("Failed to fetch employees");
+
+          const data = await response.json();
+          if (!isCancelled) setEmployees(data);
+        } catch (err) {
+          if (!isCancelled) setError((err as Error).message);
         }
       };
 
       fetchOrganization();
-      
+      fetchEmployees();
+
       return () => {
         isCancelled = true;
       };
@@ -75,22 +78,40 @@ const EmployerDashboard = () => {
     }
   }, [address, isConnected]);
 
-  if (loading) {
-    return <div>Loading...</div>;
-  }
+  const handleAddEmployee = async (e: React.FormEvent) => {
+    e.preventDefault();
 
-  if (error) {
-    return <div>Error: {error}</div>;
-  }
+    if (!selectedEmployee) {
+      alert("Please select an employee");
+      return;
+    }
 
-  if (!organization) {
-    return <div>No organization found for this user.</div>;
-  }
+    if (!amount || isNaN(Number(amount)) || Number(amount) <= 0) {
+      alert("Please enter a valid amount");
+      return;
+    }
+
+    const res = await fetch("/api/computesignal", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        walletAddress: selectedEmployee,
+        amount: amount
+      }),
+    });
+
+    console.log("Add employee placeholder - selected:", selectedEmployee);
+    // TODO: actual implementation
+  };
+
+  if (loading) return <div>Loading...</div>;
+  if (error) return <div>Error: {error}</div>;
+  if (!organization) return <div>No organization found for this user.</div>;
 
   return (
     <div>
       <h2 className="text-2xl font-bold mb-4">Organization Details</h2>
-      <div className="space-y-2">
+      <div className="space-y-2 mb-6">
         <p>
           <strong>Name:</strong> {organization.name}
         </p>
@@ -101,6 +122,47 @@ const EmployerDashboard = () => {
           <strong>Payment Token:</strong> {organization.paymentToken}
         </p>
       </div>
+
+      <h3 className="text-xl font-semibold mb-2">Add Employee</h3>
+      {employees.length === 0 ? (
+        <p>No employees available.</p>
+      ) : (
+        <form onSubmit={handleAddEmployee} className="space-y-4">
+          <select
+            className="border p-2 rounded w-full"
+            value={selectedEmployee}
+            onChange={(e) => {
+              console.log(e.target.value)
+              setSelectedEmployee(e.target.value)
+            }
+            }
+            required
+          >
+            <option value="">Select Employee</option>
+            {employees.map((emp, idx) => (
+              <option key={idx} value={emp.walletAddress}>
+                {emp.walletAddress}
+              </option>
+            ))}
+          </select>
+
+          <input
+            type="number"
+            placeholder="Enter amount"
+            className="border p-2 rounded w-full"
+            value={amount}
+            onChange={(e) => setAmount(e.target.value)}
+            required
+          />
+
+          <button
+            type="submit"
+            className="bg-blue-600 text-white px-4 py-2 rounded"
+          >
+            Add Employee
+          </button>
+        </form>
+      )}
     </div>
   );
 };

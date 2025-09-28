@@ -19,7 +19,6 @@ model User {
 
   walletAddress String   @unique
   userType      UserType @default(EMPLOYEE)
-  hasOnboarded  Boolean  @default(false)
 
   publicViewerKey  String? // publicKey[0] (for employees)
   publicSpenderKey String? // publicKey[1] (for employees)
@@ -33,6 +32,7 @@ model User {
   organisations Organisation[]
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
+  Employee      Employee[]
 
   @@map("users")
 }
@@ -53,24 +53,18 @@ model Organisation {
 }
 
 model Employee {
-  id              String       @id @default(cuid())
-  organisation    Organisation @relation(fields: [organisationId], references: [id])
-  organisationId  String
-  employeeId      BigInt // Employee ID from contract (nextEmployeeId)
-  employeeAddress String
-  name            String? // Optional employee name/identifier
+  id String @id @default(cuid())
 
-  // Stealth address keys (stored as strings to handle BigInt)
-  publicViewerKeyX  String // publicViewerKey[0]
-  publicViewerKeyY  String // publicViewerKey[1]  
-  publicSpenderKeyX String // publicSpenderKey[0]
-  publicSpenderKeyY String // publicSpenderKey[1]
+  organisationId String
+  organisation   Organisation @relation(fields: [organisationId], references: [id])
+
+  employeeId String
+  employee   User   @relation(fields: [employeeId], references: [id])
 
   isActive  Boolean  @default(true)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  @@unique([organisationId, employeeAddress])
   @@unique([organisationId, employeeId])
   @@map("employees")
 }
